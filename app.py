@@ -225,5 +225,28 @@ draw_astrology_card(
     final_res=final_set
 )
 
+# --- [함수 호출: 여기서 실제로 화면에 카드를 그립니다] ---
+
+# 1. 행성 데이터 변환 로직 (명함용으로 각도 재계산)
+zodiac_list = ["양자리", "황소자리", "쌍둥이자리", "게자리", "사자자리", "처녀자리", "천칭자리", "전갈자리", "사수자리", "염소자리", "물병자리", "물고기자리"]
+planet_dict_for_card = {}
+
+for _, row in astro_df.iterrows():
+    if row['별자리'] in zodiac_list:
+        z_idx = zodiac_list.index(row['별자리'])
+        full_angle = (z_idx * 30) + row['좌표']
+        planet_dict_for_card[row['행성']] = {'angle': full_angle}
+
+# 2. 화면에 버튼과 카드 출력
+st.divider()
+if st.button("🧧 나의 우주 공명 카드 발행하기"):
+    draw_astrology_card(
+        u_id=u_id.upper(), 
+        target_date=target_sat.strftime('%Y-%m-%d'), 
+        planet_data=planet_dict_for_card, 
+        res_sets=human_list, 
+        final_res=final_set
+    )
+    st.balloons() # 발행 축하 효과!
 
 
