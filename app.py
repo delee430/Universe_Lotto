@@ -152,32 +152,33 @@ with st.expander("🪐 정밀 분석 데이터 및 개인 아카이브", expande
 import streamlit as st
 import math
 
+# --- [함수 수정: 이모지 적용 버전] ---
 def draw_astrology_card(u_id, target_date, planet_data, res_sets, final_res):
-    # 1. 행성 마커 생성 (HTML/CSS)
     planet_markers = ""
-    center = 100  # 휠의 중심 (200px 기준)
-    radius = 80   # 행성이 배치될 반지름
+    center = 100 
+    radius = 80  
+    
+    # 설계자님이 깜빡하신 귀여운 이모지들! 
+    symbols = {
+        "태양": "☀️", "달": "🌙", "수성": "💧", "금성": "✨", 
+        "화성": "🔥", "목성": "⚡", "토성": "🪐", "천왕성": "🌀", 
+        "해왕성": "🔱", "명왕성": "💀"
+    }
     
     for p_name, p_info in planet_data.items():
-        # 각도를 라디안으로 변환 (점성술 휠은 시계 반대방향/90도 오프셋 보정 필요할 수 있음)
         angle_rad = math.radians(p_info['angle'] - 90) 
         px = center + radius * math.cos(angle_rad)
         py = center + radius * math.sin(angle_rad)
         
-        # 행성 기호(Unicode) 배치
-        symbols = {"태양": "☉", "달": "☽", "수성": "☿", "금성": "♀", "화성": "♂", "목성": "♃", "토성": "♄"}
         sym = symbols.get(p_name, "●")
-        planet_markers += f'<div style="position:absolute; left:{px}px; top:{py}px; color:#00ffcc; font-size:12px; transform:translate(-50%, -50%);">{sym}</div>'
+        planet_markers += f'<div style="position:absolute; left:{px}px; top:{py}px; font-size:14px; transform:translate(-50%, -50%);">{sym}</div>'
 
-    # 2. 명함 렌더링
     st.markdown(f"""
     <div style="display: flex; justify-content: center; padding: 10px;">
         <div style="width: 320px; background: linear-gradient(145deg, #1a1c23, #0e1117); 
                     border: 1px solid #333; border-radius: 12px; padding: 15px; text-align: center; color: white;
                     box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
-            
             <div style="font-size: 10px; letter-spacing: 2px; color: #666; margin-bottom: 10px;">ID: {u_id}</div>
-            
             <div style="position: relative; width: 200px; height: 200px; margin: 0 auto; 
                         border: 1px solid #222; border-radius: 50%; background: url('https://img.icons8.com/ios/200/cccccc/zodiac-wheel.png') no-repeat center; background-size: 90%;">
                 {planet_markers}
@@ -186,13 +187,10 @@ def draw_astrology_card(u_id, target_date, planet_data, res_sets, final_res):
                     <img src="https://api.qrserver.com/v1/create-qr-code/?size=50x50&data=https://universelotto-tzqbe6sppmmbesq9rndwah.streamlit.app/?id={u_id}" style="width:100%;"/>
                 </div>
             </div>
-            
             <div style="font-size: 9px; color: #444; margin: 10px 0;">{target_date} ANALYSIS</div>
-            
             <div style="font-size: 11px; color: #888; line-height: 1.5; margin-bottom: 10px;">
-                { '<br>'.join([str(s) for s in res_sets]) }
+                {'<br>'.join([str(s) for s in res_sets])}
             </div>
-            
             <div style="background: rgba(0,255,204,0.1); border-radius: 6px; padding: 8px; 
                         color: #00ffcc; font-weight: bold; font-size: 16px; border: 1px solid rgba(0,255,204,0.3);">
                 {final_res}
@@ -201,33 +199,7 @@ def draw_astrology_card(u_id, target_date, planet_data, res_sets, final_res):
     </div>
     """, unsafe_allow_html=True)
 
-
-# --- [기존 코드 맨 아래에 추가] ---
-
-# 1. 행성 데이터 변환 (astro_df 활용)
-# 명함 함수가 요구하는 {'태양': {'angle': 27.34}, ...} 형태로 만듭니다.
-planet_dict_for_card = {}
-for _, row in astro_df.iterrows():
-    # '좌표'는 0~30도이므로, 실제 휠 배치를 위해 별자리 위치를 포함한 전체 각도(0~360)를 계산합니다.
-    zodiac_idx = ["양자리", "황소자리", "쌍둥이자리", "게자리", "사자자리", "처녀자리", 
-                  "천칭자리", "전갈자리", "사수자리", "염소자리", "물병자리", "물고기자리"].index(row['별자리'])
-    full_angle = (zodiac_idx * 30) + row['좌표']
-    planet_dict_for_card[row['행성']] = {'angle': full_angle}
-
-# 2. 명함 출력 버튼 (선택 사항) 또는 자동 출력
-st.divider()
-st.subheader("🧧 오늘의 우주 공명 카드")
-draw_astrology_card(
-    u_id=u_id.upper(), 
-    target_date=target_sat.strftime('%Y-%m-%d'), 
-    planet_data=planet_dict_for_card, 
-    res_sets=human_list, 
-    final_res=final_set
-)
-
-# --- [함수 호출: 여기서 실제로 화면에 카드를 그립니다] ---
-
-# 1. 행성 데이터 변환 로직 (명함용으로 각도 재계산)
+# --- [최종 실행부: 데이터 변환 및 버튼] ---
 zodiac_list = ["양자리", "황소자리", "쌍둥이자리", "게자리", "사자자리", "처녀자리", "천칭자리", "전갈자리", "사수자리", "염소자리", "물병자리", "물고기자리"]
 planet_dict_for_card = {}
 
@@ -237,8 +209,8 @@ for _, row in astro_df.iterrows():
         full_angle = (z_idx * 30) + row['좌표']
         planet_dict_for_card[row['행성']] = {'angle': full_angle}
 
-# 2. 화면에 버튼과 카드 출력
 st.divider()
+# 버튼을 누르기 전에는 카드가 나오지 않도록 버튼 안에만 함수를 넣었습니다.
 if st.button("🧧 나의 우주 공명 카드 발행하기"):
     draw_astrology_card(
         u_id=u_id.upper(), 
@@ -247,6 +219,6 @@ if st.button("🧧 나의 우주 공명 카드 발행하기"):
         res_sets=human_list, 
         final_res=final_set
     )
-    st.balloons() # 발행 축하 효과!
+    st.balloons()
 
 
