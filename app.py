@@ -17,25 +17,12 @@ ephe_path = os.path.join(current_dir, 'sweph')
 if not os.path.exists(ephe_path): os.makedirs(ephe_path)
 swe.set_ephe_path(ephe_path)
 
-st.set_page_config(layout="wide", page_title="우주 공명 아카이브 V4.5.5")
+st.set_page_config(layout="wide", page_title="우주 공명 아카이브 V4.5.6")
+st.markdown("<style>.small-font { font-size:13px !important; }</style>", unsafe_allow_html=True)
 
-# --- 핵심 함수 정의 (미리 정의해두어야 함) ---
+# --- [함수 정의 영역] ---
 def get_user_id(name, birthday):
     return hashlib.md5(f"{name}_{birthday.strftime('%Y%m%d')}".encode()).hexdigest()[:8]
-
-def get_aspects(pos_dict):
-    aspects = []
-    p_names = list(pos_dict.keys())
-    for i in range(len(p_names)):
-        for j in range(i + 1, len(p_names)):
-            p1, p2 = p_names[i], p_names[j]
-            diff = abs(pos_dict[p1] - pos_dict[p2])
-            diff = diff if diff <= 180 else 360 - diff
-            if diff < 5: aspects.append(f"{p1}-{p2}:0°")
-            elif 85 < diff < 95: aspects.append(f"{p1}-{p2}:90°")
-            elif 115 < diff < 125: aspects.append(f"{p1}-{p2}:120°")
-            elif 175 < diff <= 180: aspects.append(f"{p1}-{p2}:180°")
-    return ", ".join(aspects) if aspects else "특이 각도 없음"
 
 def get_advanced_astro(target_date, birthday):
     jd_t = swe.julday(target_date.year, target_date.month, target_date.day, 11)
@@ -52,7 +39,7 @@ def get_advanced_astro(target_date, birthday):
             seeds.append(int(res_t[0] * 1000 + res_b[0] * 10 + birthday.day))
             pos_dict[name] = res_t[0]
         except: seeds.append(random.randint(1, 1000000))
-    return pd.DataFrame(results), seeds, get_aspects(pos_dict)
+    return pd.DataFrame(results), seeds
 
 def draw_astrology_card(u_id, target_date, planet_data, res_sets, final_res):
     planet_markers = ""
@@ -66,7 +53,7 @@ def draw_astrology_card(u_id, target_date, planet_data, res_sets, final_res):
 
     st.markdown(f"""
     <div style="display: flex; justify-content: center; align-items: center; flex-direction: column; padding: 10px;">
-        <div style="width: 340px; background: #1a1c23; border: 1px solid #444; border-radius: 15px; padding: 25px; text-align: center; color: white;">
+        <div style="width: 340px; background: #1a1c23; border: 1px solid #444; border-radius: 15px; padding: 25px; text-align: center; color: white; box-shadow: 0 10px 40px rgba(0,0,0,0.7);">
             <div style="font-size: 16px; font-weight: bold; color: #FFFFFF; margin-bottom: 15px;">ID: {u_id}</div>
             <div style="position: relative; width: 200px; height: 200px; margin: 0 auto; border: 1px solid #333; border-radius: 50%; background: url('https://img.icons8.com/ios/200/ffffff/zodiac-wheel.png') no-repeat center; background-size: 90%;">
                 {planet_markers}
@@ -83,7 +70,7 @@ def draw_astrology_card(u_id, target_date, planet_data, res_sets, final_res):
     </div>
     """, unsafe_allow_html=True)
 
-# --- [재료 준비 시작] ---
+# --- [사이드바 설정 및 데이터 생성] ---
 with st.sidebar:
     st.header("👤 연구원 프로필")
     user_name = st.text_input("성함", "설계자")
@@ -92,37 +79,59 @@ with st.sidebar:
     u_id = get_user_id(user_name, birthday)
 
 target_sat = analysis_date + timedelta(days=(5 - analysis_date.weekday()) % 7)
-# 에러의 원인이었던 astro_df를 여기서 먼저 생성합니다!
-astro_df, p_seeds, aspects_txt = get_advanced_astro(target_sat, birthday)
+astro_df, p_seeds = get_advanced_astro(target_sat, birthday)
 
-# --- [본문 출력 시작] ---
-st.title(f"🌌 {user_name}의 우주 공명 아카이브 V4.5.5")
+st.title(f"🌌 {user_name}의 우주 공명 아카이브 V4.5.6")
 
-# 숫자 매트릭스 계산
+# --- [천지인 숫자 매트릭스 복구] ---
 ace_list, sky_list, human_list = [], [], []
-for i in range(5):
-    random.seed(p_seeds[1] + p_seeds[2] + int(u_id, 16) % 1000 + i)
-    human_list.append(sorted(random.sample(range(1, 46), 6)))
+c1, c2, c3 = st.columns(3)
+
+with c1:
+    st.subheader("📊 [地] 에이스라인")
+    # 마스터리스트(지상 데이터) 기반 계산
+    ace_seed = sum(p_seeds[:3]) # 대체 시드
+    for i in range(5):
+        random.seed(ace_seed + i)
+        n = sorted(random.sample(range(1, 46), 6))
+        ace_list.append(n); st.markdown(f"<p class='small-font'>E-{i+1}: {n}</p>", unsafe_allow_html=True)
+
+with c2:
+    st.subheader("🪐 [天] 우주기운")
+    for i in range(5):
+        random.seed(p_seeds[5] + p_seeds[9] + i)
+        n = sorted(random.sample(range(1, 46), 6))
+        sky_list.append(n); st.markdown(f"<p class='small-font'>S-{i+1}: {n}</p>", unsafe_allow_html=True)
+
+with c3:
+    st.subheader("🧬 [人] 나의공명")
+    for i in range(5):
+        random.seed(p_seeds[1] + p_seeds[2] + int(u_id, 16) % 1000 + i)
+        n = sorted(random.sample(range(1, 46), 6))
+        human_list.append(n); st.markdown(f"<p class='small-font'>M-{i+1}: {n}</p>", unsafe_allow_html=True)
 
 # 최종 결과 계산
-all_comb = human_list # 예시용
+all_comb = ace_list + sky_list + human_list
 counts = collections.Counter([n for combo in all_comb for n in combo])
 top_nums = sorted([n for n, c in counts.items() if c > 1], key=lambda x: counts[x], reverse=True)
 random.seed(int(u_id, 16))
 final_set = sorted((top_nums[:6] + random.sample(range(1, 46), 6))[:6])
 
-# --- [공명 카드 발행 섹션] ---
 st.divider()
+st.success(f"## 🍀 최종 공명 조합: {final_set}")
+
+# --- [공명 카드 발행 섹션] ---
 with st.expander("🪐 정밀 분석 및 공명 카드 발행", expanded=True):
     z_list = ["양자리", "황소자리", "쌍둥이자리", "게자리", "사자자리", "처녀자리", "천칭자리", "전갈자리", "사수자리", "염소자리", "물병자리", "물고기자리"]
     planet_dict_for_card = {}
-    for _, row in astro_df.iterrows(): # 이제 astro_df가 위에서 생성되었으므로 에러가 나지 않습니다!
+    for _, row in astro_df.iterrows():
         if row['별자리'] in z_list:
             full_angle = (z_list.index(row['별자리']) * 30) + row['좌표']
             planet_dict_for_card[row['행성']] = {'angle': full_angle}
 
     draw_astrology_card(u_id.upper(), target_sat.strftime('%Y-%m-%d'), planet_dict_for_card, human_list, final_set)
     
+    # 해설 테이블
     st.markdown(f"""
     <div style="width: 340px; margin: 10px auto; padding: 15px; background: #FFFFFF; border-radius: 10px; border: 1px solid #ddd; color: #000000;">
         <div style="font-size: 13px; color: #008080; margin-bottom: 10px; font-weight: bold; text-align: center;">[ 행성 기호 가이드 ]</div>
@@ -137,4 +146,3 @@ with st.expander("🪐 정밀 분석 및 공명 카드 발행", expanded=True):
     """, unsafe_allow_html=True)
     
     st.table(astro_df)
-    
