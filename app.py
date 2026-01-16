@@ -158,7 +158,6 @@ def draw_astrology_card(u_id, target_date, planet_data, res_sets, final_res):
     center = 100 
     radius = 80  
     
-    # 설계자님이 깜빡하신 귀여운 이모지들! 
     symbols = {
         "태양": "☀️", "달": "🌙", "수성": "💧", "금성": "✨", 
         "화성": "🔥", "목성": "⚡", "토성": "🪐", "천왕성": "🌀", 
@@ -169,31 +168,39 @@ def draw_astrology_card(u_id, target_date, planet_data, res_sets, final_res):
         angle_rad = math.radians(p_info['angle'] - 90) 
         px = center + radius * math.cos(angle_rad)
         py = center + radius * math.sin(angle_rad)
-        
         sym = symbols.get(p_name, "●")
         planet_markers += f'<div style="position:absolute; left:{px}px; top:{py}px; font-size:14px; transform:translate(-50%, -50%);">{sym}</div>'
 
     st.markdown(f"""
     <div style="display: flex; justify-content: center; padding: 10px;">
         <div style="width: 320px; background: linear-gradient(145deg, #1a1c23, #0e1117); 
-                    border: 1px solid #333; border-radius: 12px; padding: 15px; text-align: center; color: white;
+                    border: 1px solid #444; border-radius: 12px; padding: 20px; text-align: center; color: white;
                     box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
-            <div style="font-size: 10px; letter-spacing: 2px; color: #666; margin-bottom: 10px;">ID: {u_id}</div>
+            
+            <div style="font-size: 13px; font-weight: bold; letter-spacing: 1px; color: #FFFFFF; margin-bottom: 12px;">
+                RESEARCHER ID: {u_id}
+            </div>
+            
             <div style="position: relative; width: 200px; height: 200px; margin: 0 auto; 
-                        border: 1px solid #222; border-radius: 50%; background: url('https://img.icons8.com/ios/200/cccccc/zodiac-wheel.png') no-repeat center; background-size: 90%;">
+                        border: 1px solid #333; border-radius: 50%; background: url('https://img.icons8.com/ios/200/ffffff/zodiac-wheel.png') no-repeat center; background-size: 90%;">
                 {planet_markers}
                 <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); 
                             width: 50px; height: 50px; background: white; padding: 2px; border-radius: 4px;">
                     <img src="https://api.qrserver.com/v1/create-qr-code/?size=50x50&data=https://universelotto-tzqbe6sppmmbesq9rndwah.streamlit.app/?id={u_id}" style="width:100%;"/>
                 </div>
             </div>
-            <div style="font-size: 9px; color: #444; margin: 10px 0;">{target_date} ANALYSIS</div>
-            <div style="font-size: 11px; color: #888; line-height: 1.5; margin-bottom: 10px;">
+            
+            <div style="font-size: 13px; color: #FFFFFF; font-weight: bold; margin: 15px 0;">
+                ANALYSIS: {target_date}
+            </div>
+            
+            <div style="font-size: 13px; color: #FFFFFF; line-height: 1.6; margin-bottom: 15px; background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px;">
                 {'<br>'.join([str(s) for s in res_sets])}
             </div>
-            <div style="background: rgba(0,255,204,0.1); border-radius: 6px; padding: 8px; 
-                        color: #00ffcc; font-weight: bold; font-size: 16px; border: 1px solid rgba(0,255,204,0.3);">
-                {final_res}
+            
+            <div style="background: rgba(0,255,204,0.15); border-radius: 6px; padding: 10px; 
+                        color: #00ffcc; font-weight: bold; font-size: 20px; border: 1px solid #00ffcc;">
+                CORE: {final_res}
             </div>
         </div>
     </div>
@@ -249,5 +256,6 @@ if st.button("🧧 나의 우주 공명 카드 발행하기"):
         </table>
     </div>
     """, unsafe_allow_html=True)
+
 
 
