@@ -65,7 +65,8 @@ with st.sidebar:
     birthday = st.date_input( "생년월일", 
     value=date(1990, 1, 1), # 기본 표시 날짜
     min_value=date(1800, 1, 1), # 최소 1800년생부터
-    max_value=date.today() # 오늘 태어난 아기까지
+    #max_value=date.today() # 오늘 태어난 아기까지
+    max_value=date(2100, 12, 31) #2100미래까지 볼 수 있음
 )
     analysis_date = st.date_input("분석 기준일", value=date.today())
     u_id = get_user_id(user_name, birthday)
@@ -146,3 +147,4 @@ with st.expander("🪐 정밀 분석 데이터 및 개인 아카이브", expande
                 st.download_button("📂 내 기록 CSV 다운로드", csv, f"archive_{u_id}.csv", "text/csv")
 
         except: st.error("로그 파일 구조를 갱신해야 합니다. 데이터를 한 번 저장해 보세요.")
+
