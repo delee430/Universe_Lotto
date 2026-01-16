@@ -149,4 +149,57 @@ with st.expander("🪐 정밀 분석 데이터 및 개인 아카이브", expande
 
         except: st.error("로그 파일 구조를 갱신해야 합니다. 데이터를 한 번 저장해 보세요.")
 
+import streamlit as st
+import math
+
+def draw_astrology_card(u_id, target_date, planet_data, res_sets, final_res):
+    # 1. 행성 마커 생성 (HTML/CSS)
+    planet_markers = ""
+    center = 100  # 휠의 중심 (200px 기준)
+    radius = 80   # 행성이 배치될 반지름
+    
+    for p_name, p_info in planet_data.items():
+        # 각도를 라디안으로 변환 (점성술 휠은 시계 반대방향/90도 오프셋 보정 필요할 수 있음)
+        angle_rad = math.radians(p_info['angle'] - 90) 
+        px = center + radius * math.cos(angle_rad)
+        py = center + radius * math.sin(angle_rad)
+        
+        # 행성 기호(Unicode) 배치
+        symbols = {"태양": "☉", "달": "☽", "수성": "☿", "금성": "♀", "화성": "♂", "목성": "♃", "토성": "♄"}
+        sym = symbols.get(p_name, "●")
+        planet_markers += f'<div style="position:absolute; left:{px}px; top:{py}px; color:#00ffcc; font-size:12px; transform:translate(-50%, -50%);">{sym}</div>'
+
+    # 2. 명함 렌더링
+    st.markdown(f"""
+    <div style="display: flex; justify-content: center; padding: 10px;">
+        <div style="width: 320px; background: linear-gradient(145deg, #1a1c23, #0e1117); 
+                    border: 1px solid #333; border-radius: 12px; padding: 15px; text-align: center; color: white;
+                    box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+            
+            <div style="font-size: 10px; letter-spacing: 2px; color: #666; margin-bottom: 10px;">ID: {u_id}</div>
+            
+            <div style="position: relative; width: 200px; height: 200px; margin: 0 auto; 
+                        border: 1px solid #222; border-radius: 50%; background: url('https://img.icons8.com/ios/200/cccccc/zodiac-wheel.png') no-repeat center; background-size: 90%;">
+                {planet_markers}
+                <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); 
+                            width: 50px; height: 50px; background: white; padding: 2px; border-radius: 4px;">
+                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=50x50&data=https://universelotto-tzqbe6sppmmbesq9rndwah.streamlit.app/?id={u_id}" style="width:100%;"/>
+                </div>
+            </div>
+            
+            <div style="font-size: 9px; color: #444; margin: 10px 0;">{target_date} ANALYSIS</div>
+            
+            <div style="font-size: 11px; color: #888; line-height: 1.5; margin-bottom: 10px;">
+                { '<br>'.join([str(s) for s in res_sets]) }
+            </div>
+            
+            <div style="background: rgba(0,255,204,0.1); border-radius: 6px; padding: 8px; 
+                        color: #00ffcc; font-weight: bold; font-size: 16px; border: 1px solid rgba(0,255,204,0.3);">
+                {final_res}
+            </div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+
 
