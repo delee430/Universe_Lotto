@@ -58,7 +58,15 @@ def get_advanced_astro(target_date, birthday):
 with st.sidebar:
     st.header("👤 연구원 프로필")
     user_name = st.text_input("성함", "설계자")
-    birthday = st.date_input("생년월일", value=date(1990, 1, 1))
+# 기존 코드:
+# birthday = st.date_input("생년월일", value=date(1990, 1, 1))
+
+# 수정 코드 (1800년부터 2100년까지 선택 가능):
+    birthday = st.date_input( "생년월일", 
+    value=date(1990, 1, 1), # 기본 표시 날짜
+    min_value=date(1800, 1, 1), # 최소 1800년생부터
+    max_value=date.today() # 오늘 태어난 아기까지
+)
     analysis_date = st.date_input("분석 기준일", value=date.today())
     u_id = get_user_id(user_name, birthday)
     st.info(f"🆔 연구원 ID: {u_id.upper()}")
@@ -136,4 +144,5 @@ with st.expander("🪐 정밀 분석 데이터 및 개인 아카이브", expande
             if not my_data.empty:
                 csv = my_data.to_csv(index=False, encoding='utf-8-sig').encode('utf-8-sig')
                 st.download_button("📂 내 기록 CSV 다운로드", csv, f"archive_{u_id}.csv", "text/csv")
+
         except: st.error("로그 파일 구조를 갱신해야 합니다. 데이터를 한 번 저장해 보세요.")
