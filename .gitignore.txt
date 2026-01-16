@@ -1,0 +1,17 @@
+# 엑셀 데이터 (개인 분석용이므로 제외)
+master_list.xlsm
+
+# 사용자 로그 데이터 (다른 사람들의 기록이 포함될 수 있으므로 제외)
+resonance_log.csv
+
+# 파이썬 캐시 파일
+__pycache__/
+*.py[cod]
+
+# 가상환경 설정 (있는 경우)
+venv/
+.env
+
+# 시스템 파일
+.DS_Store
+Thumbs.db
