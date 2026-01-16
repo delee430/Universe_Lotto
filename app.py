@@ -56,6 +56,7 @@ def get_advanced_astro(target_date, birthday):
     return pd.DataFrame(results), seeds, get_aspects(pos_dict)
 
 # --- 공명 카드 드로잉 함수 (HTML/CSS) ---
+# --- [함수: 텍스트 가시성 대폭 개선 버전] ---
 def draw_astrology_card(u_id, target_date, planet_data, res_sets, final_res):
     planet_markers = ""
     center, radius = 100, 80
@@ -67,13 +68,16 @@ def draw_astrology_card(u_id, target_date, planet_data, res_sets, final_res):
         sym = symbols.get(p_name, "●")
         planet_markers += f'<div style="position:absolute; left:{px}px; top:{py}px; font-size:14px; transform:translate(-50%, -50%);">{sym}</div>'
 
+    # 핵심: 모든 텍스트를 흰색(#FFFFFF)으로 강제 지정하고 크기를 키움
     st.markdown(f"""
-    <div style="display: flex; justify-content: center; align-items: center; flex-direction: column; padding: 20px;">
-        <div style="width: 340px; background: linear-gradient(145deg, #1a1c23, #0e1117); 
+    <div style="display: flex; justify-content: center; align-items: center; flex-direction: column; padding: 10px;">
+        <div style="width: 340px; background: #1a1c23; 
                     border: 1px solid #444; border-radius: 15px; padding: 25px; text-align: center; color: white;
                     box-shadow: 0 10px 40px rgba(0,0,0,0.7);">
             
-            <div style="font-size: 14px; font-weight: bold; letter-spacing: 1px; color: #FFFFFF; margin-bottom: 15px;">RESEARCHER ID: {u_id}</div>
+            <div style="font-size: 16px; font-weight: bold; letter-spacing: 1px; color: #FFFFFF !important; margin-bottom: 15px;">
+                ID: {u_id}
+            </div>
             
             <div style="position: relative; width: 200px; height: 200px; margin: 0 auto; 
                         border: 1px solid #333; border-radius: 50%; background: url('https://img.icons8.com/ios/200/ffffff/zodiac-wheel.png') no-repeat center; background-size: 90%;">
@@ -84,17 +88,45 @@ def draw_astrology_card(u_id, target_date, planet_data, res_sets, final_res):
                 </div>
             </div>
             
-            <div style="font-size: 14px; color: #FFFFFF; font-weight: bold; margin: 20px 0;">ANALYSIS: {target_date}</div>
+            <div style="font-size: 15px; color: #FFFFFF !important; font-weight: bold; margin: 20px 0;">
+                {target_date} ANALYSIS
+            </div>
             
-            <div style="font-size: 14px; color: #FFFFFF; line-height: 1.7; margin-bottom: 20px; background: rgba(255,255,255,0.07); padding: 12px; border-radius: 10px;">
+            <div style="font-size: 15px; color: #FFFFFF !important; line-height: 1.8; margin-bottom: 20px; background: rgba(255,255,255,0.1); padding: 12px; border-radius: 10px;">
                 {'<br>'.join([str(s) for s in res_sets])}
             </div>
             
-            <div style="background: rgba(0,255,204,0.15); border-radius: 8px; padding: 12px; 
-                        color: #00ffcc; font-weight: bold; font-size: 22px; border: 2px solid #00ffcc;">
-                CORE: {final_res}
+            <div style="background: rgba(0,255,204,0.2); border-radius: 8px; padding: 12px; 
+                        color: #00ffcc; font-weight: bold; font-size: 24px; border: 2px solid #00ffcc;">
+                {final_res}
             </div>
         </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+# --- [실행부: 테이블 글자색 검은색 유지] ---
+st.divider()
+with st.expander("🪐 정밀 분석 및 공명 카드 발행", expanded=True):
+    z_list = ["양자리", "황소자리", "쌍둥이자리", "게자리", "사자자리", "처녀자리", "천칭자리", "전갈자리", "사수자리", "염소자리", "물병자리", "물고기자리"]
+    planet_dict_for_card = {}
+    for _, row in astro_df.iterrows():
+        if row['별자리'] in z_list:
+            full_angle = (z_list.index(row['별자리']) * 30) + row['좌표']
+            planet_dict_for_card[row['행성']] = {'angle': full_angle}
+
+    draw_astrology_card(u_id.upper(), target_sat.strftime('%Y-%m-%d'), planet_dict_for_card, human_list, final_set)
+    
+    # 해설 테이블: 배경은 밝게, 글자는 검은색(#000000)
+    st.markdown(f"""
+    <div style="width: 340px; margin: 10px auto; padding: 15px; background: #FFFFFF; border-radius: 10px; border: 1px solid #ddd; color: #000000; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
+        <div style="font-size: 13px; color: #008080; margin-bottom: 10px; font-weight: bold; text-align: center;">[ 행성 기호 가이드 ]</div>
+        <table style="width: 100%; font-size: 12px; color: #000000 !important; border-collapse: collapse; line-height: 1.7;">
+            <tr><td>☀️ 태양: 자아/생명력</td><td>🌙 달: 감정/내면</td></tr>
+            <tr><td>💧 수성: 소통/지성</td><td>✨ 금성: 사랑/가치</td></tr>
+            <tr><td>🔥 화성: 열정/행동</td><td>⚡ 목성: 확장/행운</td></tr>
+            <tr><td>🪐 토성: 인내/질서</td><td>🌀 천왕성: 변화/혁신</td></tr>
+            <tr><td>🔱 해왕성: 영감/꿈</td><td>💀 명왕성: 변형/재생</td></tr>
+        </table>
     </div>
     """, unsafe_allow_html=True)
 
@@ -206,3 +238,4 @@ with st.expander("🪐 정밀 분석 및 공명 카드 발행", expanded=True):
     # 풍선 효과는 버튼을 누를 때만 나오게 유지하고 싶다면 아래 주석 해제
     if st.button("🧧 카드 발행 축하 풍선 날리기"):
         st.balloons()
+
