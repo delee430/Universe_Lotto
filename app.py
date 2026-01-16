@@ -210,15 +210,19 @@ def draw_astrology_card(u_id, target_date, planet_data, res_sets, final_res):
 zodiac_list = ["양자리", "황소자리", "쌍둥이자리", "게자리", "사자자리", "처녀자리", "천칭자리", "전갈자리", "사수자리", "염소자리", "물병자리", "물고기자리"]
 planet_dict_for_card = {}
 
-for _, row in astro_df.iterrows():
-    if row['별자리'] in zodiac_list:
-        z_idx = zodiac_list.index(row['별자리'])
-        full_angle = (z_idx * 30) + row['좌표']
-        planet_dict_for_card[row['행성']] = {'angle': full_angle}
+# astro_df가 정상적으로 생성되었을 때만 실행
+if not astro_df.empty:
+    for _, row in astro_df.iterrows():
+        if row['별자리'] in zodiac_list:
+            z_idx = zodiac_list.index(row['별자리'])
+            full_angle = (z_idx * 30) + row['좌표']
+            planet_dict_for_card[row['행성']] = {'angle': full_angle}
 
 st.divider()
-# 버튼을 누르기 전에는 카드가 나오지 않도록 버튼 안에만 함수를 넣었습니다.
+
+# 버튼 클릭 시 카드와 해설 테이블이 동시에 나타나도록 함
 if st.button("🧧 나의 우주 공명 카드 발행하기"):
+    # 1. 카드 그리기
     draw_astrology_card(
         u_id=u_id.upper(), 
         target_date=target_sat.strftime('%Y-%m-%d'), 
@@ -226,7 +230,22 @@ if st.button("🧧 나의 우주 공명 카드 발행하기"):
         res_sets=human_list, 
         final_res=final_set
     )
-    st.balloons()
+    
+    # 2. 이모지 해설 테이블 (버튼 클릭 시 카드 바로 아래 나타남)
+    st.markdown(f"""
+    <div style="width: 320px; margin: 0 auto; padding: 12px; background: rgba(255,255,255,0.05); border-radius: 8px; border: 1px dashed #444; color: white;">
+        <div style="font-size: 11px; color: #00ffcc; margin-bottom: 8px; font-weight: bold; text-align: center;">[ 행성 기호 가이드 ]</div>
+        <table style="width: 100%; font-size: 10px; color: #FFFFFF; border-collapse: collapse;">
+            <tr><td>☀️ 태양: 자아/생명력</td><td>🌙 달: 감정/내면</td></tr>
+            <tr><td>💧 수성: 소통/지성</td><td>✨ 금성: 사랑/가치</td></tr>
+            <tr><td>🔥 화성: 열정/행동</td><td>⚡ 목성: 확장/행운</td></tr>
+            <tr><td>🪐 토성: 인내/질서</td><td>🌀 천왕성: 변화/혁신</td></tr>
+            <tr><td>🔱 해왕성: 영감/꿈</td><td>💀 명왕성: 변형/재생</td></tr>
+        </table>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    st.balloons() # 축하 효과
 
 # 3. 이모지 해설 테이블 (명함 바로 아래에 추가)
     st.markdown(f"""
@@ -256,6 +275,7 @@ if st.button("🧧 나의 우주 공명 카드 발행하기"):
         </table>
     </div>
     """, unsafe_allow_html=True)
+
 
 
 
