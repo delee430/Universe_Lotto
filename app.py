@@ -221,4 +221,33 @@ if st.button("🧧 나의 우주 공명 카드 발행하기"):
     )
     st.balloons()
 
+# 3. 이모지 해설 테이블 (명함 바로 아래에 추가)
+    st.markdown(f"""
+    <div style="width: 320px; margin: 10px auto; padding: 10px; background: rgba(255,255,255,0.05); border-radius: 8px; border: 1px dashed #444;">
+        <div style="font-size: 11px; color: #00ffcc; margin-bottom: 5px; font-weight: bold;">[ 행성 기호 가이드 ]</div>
+        <table style="width: 100%; font-size: 10px; color: #aaa; border-collapse: collapse;">
+            <tr>
+                <td>☀️ 태양: 자아/생명력</td>
+                <td>🌙 달: 감정/내면</td>
+            </tr>
+            <tr>
+                <td>💧 수성: 소통/지성</td>
+                <td>✨ 금성: 사랑/가치</td>
+            </tr>
+            <tr>
+                <td>🔥 화성: 열정/행동</td>
+                <td>⚡ 목성: 확장/행운</td>
+            </tr>
+            <tr>
+                <td>🪐 토성: 인내/질서</td>
+                <td>🌀 천왕성: 변화/혁신</td>
+            </tr>
+            <tr>
+                <td>🔱 해왕성: 영감/꿈</td>
+                <td>💀 명왕성: 변형/재생</td>
+            </tr>
+        </table>
+    </div>
+    """, unsafe_allow_html=True)
+
 
