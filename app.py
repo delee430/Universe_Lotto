@@ -202,4 +202,28 @@ def draw_astrology_card(u_id, target_date, planet_data, res_sets, final_res):
     """, unsafe_allow_html=True)
 
 
+# --- [기존 코드 맨 아래에 추가] ---
+
+# 1. 행성 데이터 변환 (astro_df 활용)
+# 명함 함수가 요구하는 {'태양': {'angle': 27.34}, ...} 형태로 만듭니다.
+planet_dict_for_card = {}
+for _, row in astro_df.iterrows():
+    # '좌표'는 0~30도이므로, 실제 휠 배치를 위해 별자리 위치를 포함한 전체 각도(0~360)를 계산합니다.
+    zodiac_idx = ["양자리", "황소자리", "쌍둥이자리", "게자리", "사자자리", "처녀자리", 
+                  "천칭자리", "전갈자리", "사수자리", "염소자리", "물병자리", "물고기자리"].index(row['별자리'])
+    full_angle = (zodiac_idx * 30) + row['좌표']
+    planet_dict_for_card[row['행성']] = {'angle': full_angle}
+
+# 2. 명함 출력 버튼 (선택 사항) 또는 자동 출력
+st.divider()
+st.subheader("🧧 오늘의 우주 공명 카드")
+draw_astrology_card(
+    u_id=u_id.upper(), 
+    target_date=target_sat.strftime('%Y-%m-%d'), 
+    planet_data=planet_dict_for_card, 
+    res_sets=human_list, 
+    final_res=final_set
+)
+
+
 
