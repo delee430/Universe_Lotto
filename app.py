@@ -202,40 +202,42 @@ if all_comb:
 
 # [3] 행성 분석 및 공명 카드 발행
 st.divider()
-with st.expander("🪐 정밀 분석 및 공명 카드 발행", expanded=True):
-    # 1. 행성 데이터 변환
-    z_list = ["양자리", "황소자리", "쌍둥이자리", "게자리", "사자자리", "처녀자리", "천칭자리", "전갈자리", "사수자리", "염소자리", "물병자리", "물고기자리"]
-    planet_dict_for_card = {}
-    for _, row in astro_df.iterrows():
-        if row['별자리'] in z_list:
-            full_angle = (z_list.index(row['별자리']) * 30) + row['좌표']
-            planet_dict_for_card[row['행성']] = {'angle': full_angle}
 
-    # 2. 카드와 테이블 즉시 출력 (버튼 없이도 보이게 설정)
-    st.subheader("🧧 나의 우주 공명 카드")
-    
-    # 카드 드로잉 호출
-    draw_astrology_card(u_id.upper(), target_sat.strftime('%Y-%m-%d'), planet_dict_for_card, human_list, final_set)
-    
-    # 3. 해설 테이블 (글자색 검은색으로 변경)
-    st.markdown(f"""
-    <div style="width: 340px; margin: 10px auto; padding: 15px; background: #f8f9fa; border-radius: 10px; border: 1px solid #ddd; color: #333333;">
-        <div style="font-size: 13px; color: #008080; margin-bottom: 10px; font-weight: bold; text-align: center;">[ 행성 기호 가이드 ]</div>
-        <table style="width: 100%; font-size: 11px; color: #333333; border-collapse: collapse; line-height: 1.6;">
-            <tr><td>☀️ 태양: 자아/생명력</td><td>🌙 달: 감정/내면</td></tr>
-            <tr><td>💧 수성: 소통/지성</td><td>✨ 금성: 사랑/가치</td></tr>
-            <tr><td>🔥 화성: 열정/행동</td><td>⚡ 목성: 확장/행운</td></tr>
-            <tr><td>🪐 토성: 인내/질서</td><td>🌀 천왕성: 변화/혁신</td></tr>
-            <tr><td>🔱 해왕성: 영감/꿈</td><td>💀 명왕성: 변형/재생</td></tr>
-        </table>
-    </div>
-    """, unsafe_allow_html=True)
+# astro_df가 위에서 정상적으로 생성되었는지 체크
+if 'astro_df' in locals() and not astro_df.empty:
+    with st.expander("🪐 정밀 분석 및 공명 카드 발행", expanded=True):
+        # 1. 행성 데이터 변환 로직
+        z_list = ["양자리", "황소자리", "쌍둥이자리", "게자리", "사자자리", "처녀자리", "천칭자리", "전갈자리", "사수자리", "염소자리", "물병자리", "물고기자리"]
+        planet_dict_for_card = {}
+        
+        for _, row in astro_df.iterrows():
+            if row['별자리'] in z_list:
+                full_angle = (z_list.index(row['별자리']) * 30) + row['좌표']
+                planet_dict_for_card[row['행성']] = {'angle': full_angle}
 
-    # 4. 추가 분석 정보
-    st.write(f"**현재 주요 각도(Aspects):** {aspects_txt}")
-    st.table(astro_df)
-    
-    # 풍선 효과는 버튼을 누를 때만 나오게 유지하고 싶다면 아래 주석 해제
-    if st.button("🧧 카드 발행 축하 풍선 날리기"):
-        st.balloons()
-
+        # 2. 카드 드로잉 함수 호출
+        # (함수 이름이 draw_astrology_card로 상단에 정의되어 있어야 합니다)
+        try:
+            draw_astrology_card(u_id.upper(), target_sat.strftime('%Y-%m-%d'), planet_dict_for_card, human_list, final_set)
+            
+            # 3. 해설 테이블 (흰 배경에 검은 글씨)
+            st.markdown(f"""
+            <div style="width: 340px; margin: 10px auto; padding: 15px; background: #FFFFFF; border-radius: 10px; border: 1px solid #ddd; color: #000000; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
+                <div style="font-size: 13px; color: #008080; margin-bottom: 10px; font-weight: bold; text-align: center;">[ 행성 기호 가이드 ]</div>
+                <table style="width: 100%; font-size: 12px; color: #000000 !important; border-collapse: collapse; line-height: 1.7;">
+                    <tr><td>☀️ 태양: 자아/생명력</td><td>🌙 달: 감정/내면</td></tr>
+                    <tr><td>💧 수성: 소통/지성</td><td>✨ 금성: 사랑/가치</td></tr>
+                    <tr><td>🔥 화성: 열정/행동</td><td>⚡ 목성: 확장/행운</td></tr>
+                    <tr><td>🪐 토성: 인내/질서</td><td>🌀 천왕성: 변화/혁신</td></tr>
+                    <tr><td>🔱 해왕성: 영감/꿈</td><td>💀 명왕성: 변형/재생</td></tr>
+                </table>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            st.write(f"**현재 주요 각도(Aspects):** {aspects_txt}")
+            st.table(astro_df)
+            
+        except NameError:
+            st.error("카드 그리기 함수(draw_astrology_card)가 정의되지 않았습니다. 코드 상단을 확인해주세요.")
+else:
+    st.warning("천체 데이터(astro_df)를 불러오지 못했습니다. 생년월일을 다시 확인해주세요.")
