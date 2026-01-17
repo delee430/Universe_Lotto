@@ -66,4 +66,79 @@ def draw_astrology_card(u_id, target_date, planet_data, res_sets, final_res):
             <div style="position: relative; width: 200px; height: 200px; margin: 0 auto; border: 1px solid #333; border-radius: 50%; background: url('https://img.icons8.com/ios/200/ffffff/zodiac-wheel.png') no-repeat center; background-size: 90%;">{planet_markers}</div>
             <div style="font-size: 15px; color: #FFFFFF; font-weight: bold; margin: 20px 0;">{target_date} ANALYSIS</div>
             <div style="font-size: 15px; color: #FFFFFF; line-height: 1.8; margin-bottom: 20px; background: rgba(255,255,255,0.1); padding: 12px; border-radius: 10px;">{'<br>'.join([str(s) for s in res_sets])}</div>
-            <div style="background: rgba(0,255,204,0.2); border-radius: 8px; padding: 12px
+            <div style="background: rgba(0,255,204,0.2); border-radius: 8px; padding: 12px; color: #00ffcc; font-weight: bold; font-size: 24px; border: 2px solid #00ffcc;">{final_res}</div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+# --- [데이터 생성 로직] ---
+with st.sidebar:
+    st.header("👤 연구원 프로필")
+    user_name = st.text_input("성함", "설계자")
+    min_d, max_d = date(1900, 1, 1), date(2100, 12, 31)
+    birthday = st.date_input("생년월일", value=date(1990, 1, 1), min_value=min_d, max_value=max_d)
+    analysis_date = st.date_input("분석 기준일", value=date.today(), min_value=min_d, max_value=max_d)
+    u_id = get_user_id(user_name, birthday)
+
+astro_df, p_seeds, aspects_txt = get_advanced_astro(analysis_date, birthday)
+
+ace_list, sky_list, human_list = [], [], []
+for i in range(5):
+    random.seed(sum(p_seeds[:3]) + i); ace_list.append(sorted(random.sample(range(1, 46), 6)))
+    random.seed(p_seeds[5] + p_seeds[9] + i); sky_list.append(sorted(random.sample(range(1, 46), 6)))
+    random.seed(p_seeds[1] + p_seeds[2] + int(u_id, 16) % 1000 + i); human_list.append(sorted(random.sample(range(1, 46), 6)))
+
+all_comb = ace_list + sky_list + human_list
+counts = collections.Counter([n for combo in all_comb for n in combo])
+top_nums = sorted([n for n, c in counts.items() if c > 1], key=lambda x: counts[x], reverse=True)
+random.seed(int(u_id, 16)); final_set = sorted((top_nums[:6] + random.sample(range(1, 46), 6))[:6])
+
+# --- [화면 출력] ---
+st.title(f"🌌 {user_name}의 통합 공명 아카이브 V4.6.3")
+
+c1, c2, c3 = st.columns(3)
+with c1:
+    st.subheader("📊 [地] 에이스")
+    for i, nums in enumerate(ace_list): display_lotto_box(nums, f"E{i+1}")
+with c2:
+    st.subheader("🪐 [天] 우주기운")
+    for i, nums in enumerate(sky_list): display_lotto_box(nums, f"S{i+1}")
+with c3:
+    st.subheader("🧬 [人] 나의공명")
+    for i, nums in enumerate(human_list): display_lotto_box(nums, f"M{i+1}")
+
+st.divider()
+res_l, res_r = st.columns([3, 1])
+with res_l:
+    num_boxes = "".join([f'<span style="display:inline-block; width:45px; height:45px; line-height:45px; margin:5px; background:linear-gradient(145deg, #00ffcc, #008080); color:white; border-radius:50%; text-align:center; font-weight:bold; font-size:20px; box-shadow: 0 4px 15px rgba(0,255,204,0.3);">{n}</span>' for n in final_set])
+    st.markdown(f"### 🍀 최종 공명 조합 ({analysis_date.strftime('%Y-%m-%d')})")
+    st.markdown(num_boxes, unsafe_allow_html=True)
+
+with res_r:
+    log_f = 'integrated_resonance_log.csv'
+    if st.button("📊 이 데이터 통합 서버 저장"):
+        new_row = pd.DataFrame([{'이름': user_name, '생일': birthday, 'ID': u_id, '분석일': analysis_date, '최종번호': str(final_set), '각도': aspects_txt}])
+        new_row.to_csv(log_f, mode='a', index=False, header=not os.path.exists(log_f), encoding='utf-8-sig')
+        st.toast("통합 서버 기록 완료!")
+    
+    if os.path.exists(log_f):
+        with open(log_f, "rb") as f:
+            st.download_button("📁 마스터 로그 다운로드", f, file_name="master_log.csv", mime="text/csv")
+
+# --- [아카이브 히스토리 분석 섹션] ---
+st.divider()
+st.subheader("🔍 아카이브 히스토리 분석")
+if os.path.exists(log_f):
+    m_df = pd.read_csv(log_f)
+    view_mode = st.radio("보기 설정", ["전체 로그 보기", "현재 접속자(ID) 기록만 보기"], horizontal=True)
+    if view_mode == "현재 접속자(ID) 기록만 보기":
+        st.dataframe(m_df[m_df['ID'] == u_id], use_container_width=True)
+    else:
+        st.dataframe(m_df, use_container_width=True)
+
+# --- [공명 카드] ---
+with st.expander("🪐 정밀 분석 및 공명 카드 발행", expanded=True):
+    z_list = ["양자리", "황소자리", "쌍둥이자리", "게자리", "사자자리", "처녀자리", "천칭자리", "전갈자리", "사수자리", "염소자리", "물병자리", "물고기자리"]
+    p_dict = {row['행성']: {'angle': (z_list.index(row['별자리']) * 30) + row['좌표']} for _, row in astro_df.iterrows()}
+    draw_astrology_card(u_id.upper(), analysis_date.strftime('%Y-%m-%d'), p_dict, human_list, final_set)
+    st.table(astro_df)
