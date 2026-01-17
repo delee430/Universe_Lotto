@@ -7,6 +7,7 @@ import os
 import hashlib
 import math
 from datetime import datetime, date, timedelta
+from streamlit_gsheets import GSheetsConnection  # 구글 시트 연결용
 
 # [1] 시스템 및 드라이브 경로 설정
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -15,12 +16,9 @@ if not os.path.exists(ephe_path): os.makedirs(ephe_path)
 swe.set_ephe_path(ephe_path)
 
 # [1] 드라이브 저장 경로 설정 (어제의 파일과 충돌 방지)
-# 새롭게 관리할 폴더명을 지정합니다.
-LOG_DIR = 'universe_lotto'
-LOG_FILE = os.path.join(LOG_DIR, 'resonance_log.csv')
-
-if not os.path.exists(LOG_DIR):
-    os.makedirs(LOG_DIR)
+# [교체] 기존 CSV 파일 경로 설정 대신 구글 시트 연결을 생성합니다.
+conn = st.connection("gsheets", type=GSheetsConnection)
+SHEET_NAME = "resonance_log" # 구글 드라이브에 있는 시트 이름
 
 st.set_page_config(layout="wide", page_title="우주 공명 아카이브 V4.7.1")
 
@@ -128,28 +126,38 @@ with res_l:
     # ... (번호 박스 출력) ...
 
 with res_r:
-    # [중요] 기존 파일을 건드리지 않고 오직 지정된 새 로그 파일에만 기록
-    if st.button("💾 새 마스터 로그에 저장"):
+    # [수정] 버튼 클릭 시 구글 시트에 직접 기록
+    if st.button("🚀 우주 로그 드라이브 저장"):
         new_row = pd.DataFrame([{
             'ID': u_id, 
             '이름': user_name, 
-            '분석일': analysis_date, 
+            '분석일': analysis_date.strftime('%Y-%m-%d'), 
             '번호': str(final_set), 
             '각도': aspects_txt,
             '기록시점': datetime.now().strftime('%Y-%m-%d %H:%M')
         }])
-        # 새 로그 파일에 덧붙이기 (기존 파일은 건드리지 않음)
-        new_row.to_csv(LOG_FILE, mode='a', index=False, header=not os.path.exists(LOG_FILE), encoding='utf-8-sig')
-        st.toast(f"{analysis_date} 데이터가 통합 로그에 추가되었습니다.")
-    
-    # 내 기록만 내려받기 (전체 로그는 비공개)
-    if os.path.exists(LOG_FILE):
-        m_df = pd.read_csv(LOG_FILE)
-        user_only_df = m_df[m_df['ID'] == u_id]
+        
+        # 1. 기존 드라이브 시트 데이터 읽기
+        try:
+            existing_data = conn.read(spreadsheet=SHEET_NAME)
+            updated_df = pd.concat([existing_data, new_row], ignore_index=True)
+        except:
+            updated_df = new_row # 시트가 비어있을 경우
+            
+        # 2. 드라이브 시트로 즉시 업데이트 (전송)
+        conn.update(spreadsheet=SHEET_NAME, data=updated_df)
+        st.toast("✅ 구글 드라이브 시트에 영구 저장되었습니다!")
+
+    # [수정] 내 기록만 필터링해서 내려받기
+    try:
+        all_logs = conn.read(spreadsheet=SHEET_NAME)
+        user_only_df = all_logs[all_logs['ID'] == u_id]
         if not user_only_df.empty:
             csv_user = user_only_df.to_csv(index=False).encode('utf-8-sig')
             st.download_button(f"📥 {user_name}님 기록만 받기", csv_user, file_name=f"my_log_{u_id}.csv", mime="text/csv")
-            
+    except:
+        st.caption("아직 기록된 로그가 없습니다.")
+        
 # ... (상단 핵심 연산 및 로그 저장 로직은 V4.7.1과 동일) ...
 
 # --- [공명 카드 및 기운 해석 섹션] ---
@@ -181,4 +189,5 @@ with st.expander("🪐 정밀 분석 및 공명 카드 발행", expanded=True):
     st.write("### 🌌 행성 위치 정밀 데이터")
     st.table(astro_df)
     st.info(f"**현재 공명 각도:** {aspects_txt}")
+
 
