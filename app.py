@@ -76,31 +76,58 @@ def draw_astrology_card(u_id, target_date, planet_data, res_sets, final_res):
     </div>
     """, unsafe_allow_html=True)
 
+  
+    def get_ace_line_from_excel(file_path):
+    try:
+        df_history = pd.read_excel(file_path)
+        # 최신 52회차(1년) 데이터를 분석용으로 반환
+        return df_history.head(52)
+    except:
+        return pd.DataFrame() # 파일이 없을 경우 빈 데이터프레임
+
 # --- [사이드바 설정] ---
 # [수정] 입력 섹션 및 시간 고정 로직
 with st.sidebar:
     st.header("👤 관측 대상 설정")
     user_name = st.text_input("성함", "설계자")
+# 1. 생년월일 입력
+    birthday = st.date_input(
+        "생년월일", 
+        date(1990, 1, 1),
+        min_value=date(1800, 1, 1), # 성인 분석을 위해 확장
+        max_value=date(2100, 12, 31)
+    )
     
-    # 생년월일 (1800-2100 확장)
-    birthday = st.date_input("생년월일", date(1990, 1, 1), 
-                             min_value=date(1800, 1, 1), max_value=date(2100, 12, 31))
-    
-    # 분석일 선택
-    d_input = st.date_input("분석 기준일", date.today(),
-                            min_value=date(1800, 1, 1), max_value=date(2100, 12, 31))
+    # 2. 날짜 선택 (d_input으로 임시 저장)
+    d_input = st.date_input(
+        "분석 기준일", 
+        date.today(),
+        min_value=date(1800, 1, 1),
+        max_value=date(2100, 12, 31)
+    )
 
-    # --- [핵심: 20:35 운명 확정 시각 고정] ---
-    # 분석 기준일이 토요일이라면 해당 일 20:35로, 
-    # 아니라면 해당 주 가장 가까운 토요일 20:35로 타겟팅할 수 있습니다.
-    analysis_date = datetime.combine(d_input, datetime.strptime("20:35:00", "%H:%M:%S").time())
+# --- [여기가 핵심 삽입 구간!] ---
     
-    # 만약 '인(人)' 알고리즘에 쓰일 '가장 가까운 토요일' 정보가 필요하다면:
+    # 1. 시각 고정: 선택한 날짜(d_input)에 20:35:00을 강제로 입힘
+    analysis_date = datetime.combine(d_input, datetime.strptime("20:35:00", "%H:%M:%S").time())
+
+    # 2. 지(地) 데이터 로드: 엑셀 파일 읽어오기
+    excel_path = os.path.join(current_dir, 'lotto_history.xlsx')
+    recent_ace_data = get_ace_line_from_excel(excel_path)
+    
+    if not recent_ace_data.empty:
+        st.caption("✅ 지(地): 최신 52회차 데이터 로드 완료")
+    
+    # 3. 인(人) 알고리즘용 타겟 설정: 이번 주 토요일 20:35 계산
     days_until_saturday = (5 - d_input.weekday()) % 7
     next_saturday_date = d_input + timedelta(days=days_until_saturday)
     target_moment = datetime.combine(next_saturday_date, datetime.strptime("20:35:00", "%H:%M:%S").time())
 
-    st.info(f"🎯 공명 타겟: {target_moment.strftime('%Y-%m-%d %H:%M')}")
+    # 4. 사용자 확인용 메시지 (하나로 통합)
+    st.success(f"🎯 분석 시점: {analysis_date.strftime('%H:%M')} 고정")
+    st.info(f"🌌 인(人) 타겟: {target_moment.strftime('%m월 %d일 %H:%M')}")
+    
+    # ----------------------------
 
 # --- [데이터 생성] ---
 astro_df, p_seeds, aspects_txt = get_advanced_astro(analysis_date, birthday)
@@ -228,6 +255,7 @@ with st.expander("🪐 정밀 분석 및 공명 카드 발행", expanded=True):
     st.table(astro_df)
     st.info(f"**현재 공명 각도:** {aspects_txt}")
     
+
 
 
 
