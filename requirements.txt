@@ -2,6 +2,8 @@ streamlit
 pandas
 numpy
 pyswisseph
+st-gsheets-connection
 openpyxl
 qrcode
 Pillow
+
