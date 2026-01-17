@@ -14,7 +14,12 @@ ephe_path = os.path.join(current_dir, 'sweph')
 if not os.path.exists(ephe_path): os.makedirs(ephe_path)
 swe.set_ephe_path(ephe_path)
 
-st.set_page_config(layout="wide", page_title="우주 공명 아카이브 V4.5.9")
+st.set_page_config(layout="wide", page_title="우주 공명 아카이브 V4.6.0")
+
+# 숫자를 가로 박스로 보여주는 헬퍼 함수
+def display_lotto_box(numbers, prefix=""):
+    num_html = "".join([f'<span style="display:inline-block; width:30px; height:30px; line-height:30px; margin:2px; background:#2e313d; color:#00ffcc; border-radius:5px; text-align:center; font-weight:bold; font-size:14px; border:1px solid #444;">{n}</span>' for n in numbers])
+    st.markdown(f"**{prefix}** {num_html}", unsafe_allow_html=True)
 
 # --- [핵심 함수] ---
 def get_user_id(name, birthday):
@@ -66,19 +71,16 @@ def draw_astrology_card(u_id, target_date, planet_data, res_sets, final_res):
     </div>
     """, unsafe_allow_html=True)
 
-# --- [사이드바 설정: 날짜 범위 대폭 확장] ---
+# --- [사이드바 및 데이터 생성] ---
 with st.sidebar:
     st.header("👤 연구원 프로필")
     user_name = st.text_input("성함", "설계자")
-    # 생년월일과 분석 기준일의 범위를 1900년부터 2100년까지로 설정
-    min_d = date(1900, 1, 1)
-    max_d = date(2100, 12, 31)
+    min_d, max_d = date(1900, 1, 1), date(2100, 12, 31)
     birthday = st.date_input("생년월일", value=date(1990, 1, 1), min_value=min_d, max_value=max_d)
     analysis_date = st.date_input("분석 기준일", value=date.today(), min_value=min_d, max_value=max_d)
     u_id = get_user_id(user_name, birthday)
 
-# 로또 추첨일(토요일)로 자동 보정하지 않고, 선택한 '분석 기준일' 그 자체를 분석 시점으로 사용
-target_sat = analysis_date 
+target_sat = analysis_date
 astro_df, p_seeds, aspects_txt = get_advanced_astro(target_sat, birthday)
 
 # --- [천지인 매트릭스 계산] ---
@@ -95,21 +97,34 @@ random.seed(int(u_id, 16))
 final_set = sorted((top_nums[:6] + random.sample(range(1, 46), 6))[:6])
 
 # --- [화면 출력] ---
-st.title(f"🌌 {user_name}의 우주 공명 아카이브 V4.5.9")
+st.title(f"🌌 {user_name}의 우주 공명 아카이브 V4.6.0")
+
+# 천지인 가로 정렬 출력
 c1, c2, c3 = st.columns(3)
-with c1: st.subheader("📊 [地] 에이스"); st.write(ace_list)
-with c2: st.subheader("🪐 [天] 우주기운"); st.write(sky_list)
-with c3: st.subheader("🧬 [人] 나의공명"); st.write(human_list)
+with c1:
+    st.subheader("📊 [地] 에이스")
+    for i, nums in enumerate(ace_list): display_lotto_box(nums, f"E{i+1}")
+with c2:
+    st.subheader("🪐 [天] 우주기운")
+    for i, nums in enumerate(sky_list): display_lotto_box(nums, f"S{i+1}")
+with c3:
+    st.subheader("🧬 [人] 나의공명")
+    for i, nums in enumerate(human_list): display_lotto_box(nums, f"M{i+1}")
 
 st.divider()
 res_l, res_r = st.columns([3, 1])
-with res_l: st.success(f"## 🍀 최종 공명 조합 ({target_sat.strftime('%Y-%m-%d')}): {final_set}")
+with res_l:
+    # 최종 조합도 박스 형태로 가독성 높임
+    num_boxes = "".join([f'<span style="display:inline-block; width:45px; height:45px; line-height:45px; margin:5px; background:linear-gradient(145deg, #00ffcc, #008080); color:white; border-radius:50%; text-align:center; font-weight:bold; font-size:20px; box-shadow: 0 4px 15px rgba(0,255,204,0.3);">{n}</span>' for n in final_set])
+    st.markdown(f"### 🍀 최종 공명 조합 ({target_sat.strftime('%Y-%m-%d')})")
+    st.markdown(num_boxes, unsafe_allow_html=True)
+
 with res_r:
     if st.button("📊 이 시점의 데이터 저장"):
         log_f = 'resonance_log.csv'
         log_df = pd.DataFrame([{'분석일': target_sat, 'ID': u_id, '결과': str(final_set), '각도': aspects_txt}])
         log_df.to_csv(log_f, mode='a', index=False, header=not os.path.exists(log_f), encoding='utf-8-sig')
-        st.toast(f"{target_sat} 데이터 저장 완료!")
+        st.toast(f"{target_sat} 데이터 기록 완료!")
 
 with st.expander("🪐 정밀 분석 및 공명 카드 발행", expanded=True):
     z_list = ["양자리", "황소자리", "쌍둥이자리", "게자리", "사자자리", "처녀자리", "천칭자리", "전갈자리", "사수자리", "염소자리", "물병자리", "물고기자리"]
