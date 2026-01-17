@@ -137,12 +137,27 @@ with res_r:
             sh = client.open_by_url(s_dict["spreadsheet"])
             worksheet = sh.get_worksheet(0) # 첫 번째 탭 선택
         
-            # 4. 데이터 추가 (새 행으로 넣기)
-            new_row = [u_id, user_name, birthday.strftime('%Y-%m-%d'), 
-                       analysis_date.strftime('%Y-%m-%d'), str(final_set), aspects_txt]
-            worksheet.append_row(new_row)
-        
-            st.toast("✅ [직통] 구글 시트 저장 성공!")
+        # 4. 데이터 추가 (결과 기록을 위한 빈 칸 포함)
+        all_rows = []
+        for idx, lotto_set in enumerate(final_set_16): # 16개 세트가 들어있는 변수명 확인
+            row = [
+                u_id, 
+                user_name, 
+                birthday.strftime('%Y-%m-%d'), 
+                analysis_date.strftime('%Y-%m-%d'), 
+                f"Set {idx+1}", 
+                str(lotto_set), 
+                aspects_txt,
+                "", # [구매 여부] 나중에 수동 입력용 빈 칸
+                ""  # [당첨 결과] 나중에 수동 입력용 빈 칸
+            ]
+            all_rows.append(row)
+
+        # 16개 행을 한 번에 전송
+        worksheet.append_rows(all_rows)
+
+        st.toast(f"✅ 16세트가 아카이브에 기록되었습니다!")
+
         except Exception as e:
             st.error(f"⚠️ 연결 실패: {str(e)}")
             st.info("시트 공유 설정에 이메일이 정확히 추가되었는지 다시 확인해주세요.")
@@ -184,6 +199,7 @@ with st.expander("🪐 정밀 분석 및 공명 카드 발행", expanded=True):
     st.table(astro_df)
     st.info(f"**현재 공명 각도:** {aspects_txt}")
     
+
 
 
 
