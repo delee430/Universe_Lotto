@@ -1,4 +1,4 @@
-        import streamlit as st
+import streamlit as st
 import swisseph as swe
 import pandas as pd
 import collections
@@ -38,6 +38,32 @@ def get_ace_line_from_excel(file_path):
     except Exception as e:
         st.error(f"엑셀 로드 오류: {e}")
         return pd.DataFrame()
+
+# 기존 get_ace_line_from_excel 함수 아래에 추가하세요
+def generate_ace_numbers(historical_data, seed_val):
+    if historical_data is None or historical_data.empty:
+        random.seed(seed_val)
+        return sorted(random.sample(range(1, 46), 6))
+    
+    # 엑셀 C~I열 데이터를 하나로 합쳐서 숫자가 나온 횟수를 셉니다
+    all_nums = historical_data.values.flatten()
+    freq_map = collections.Counter(all_nums)
+    
+    # 많이 나온 숫자일수록 뽑힐 확률(가중치)을 높입니다 (베이지안 기초)
+    weights = []
+    for i in range(1, 46):
+        count = freq_map.get(i, 0)
+        weights.append(count + 1) # 한 번도 안 나왔어도 최소 확률 1 부여
+        
+    random.seed(seed_val)
+    res = []
+    while len(res) < 6:
+        choice = random.choices(range(1, 46), weights=weights, k=1)[0]
+        if choice not in res:
+            res.append(choice)
+    return sorted(res)
+
+
 
 def display_lotto_box(numbers, prefix=""):
     num_html = "".join([f'<span style="display:inline-block; width:30px; height:30px; line-height:30px; margin:2px; background:#2e313d; color:#00ffcc; border-radius:5px; text-align:center; font-weight:bold; font-size:14px; border:1px solid #444;">{n}</span>' for n in numbers])
@@ -139,17 +165,37 @@ with st.sidebar:
     st.info(f"🎯 인(人) 타겟: {target_moment.strftime('%m/%d %H:%M')}")
 
 # --- [데이터 생성] ---
-astro_df, p_seeds, aspects_txt = get_advanced_astro(analysis_date, birthday)
-ace_list, sky_list, human_list = [], [], []
-for i in range(5):
-    random.seed(sum(p_seeds[:3]) + i); ace_list.append(sorted(random.sample(range(1, 46), 6)))
-    random.seed(p_seeds[5] + p_seeds[9] + i); sky_list.append(sorted(random.sample(range(1, 46), 6)))
-    random.seed(p_seeds[1] + p_seeds[2] + int(u_id, 16) % 1000 + i); human_list.append(sorted(random.sample(range(1, 46), 6)))
+# 1. 고유 ID를 먼저 생성해야 에러가 안 납니다
+u_id = get_user_id(user_name, birthday)
 
+# 2. 하늘의 씨앗(p_seeds) 생성
+astro_df, p_seeds, aspects_txt = get_advanced_astro(analysis_date, birthday)
+
+# 3. 엑셀 데이터 준비
+historical_df = st.session_state.get('ace_historical_data', pd.DataFrame())
+
+ace_list, sky_list, human_list = [], [], []
+
+for i in range(5):
+    # [地 - Ace] 엑셀 가중치 반영 로직 적용
+    ace_res = generate_ace_numbers(historical_df, sum(p_seeds[:3]) + i)
+    ace_list.append(ace_res)
+    
+    # [天 - Sky] 기존 방식 유지
+    random.seed(p_seeds[5] + p_seeds[9] + i)
+    sky_list.append(sorted(random.sample(range(1, 46), 6)))
+    
+    # [人 - Human] 기존 방식 유지
+    random.seed(p_seeds[1] + p_seeds[2] + int(u_id, 16) % 1000 + i)
+    human_list.append(sorted(random.sample(range(1, 46), 6)))
+
+# 4. 최종 통합 세트 (16번째)
 all_comb = ace_list + sky_list + human_list
 counts = collections.Counter([n for combo in all_comb for n in combo])
 top_nums = sorted([n for n, c in counts.items() if c > 1], key=lambda x: counts[x], reverse=True)
-random.seed(int(u_id, 16)); final_set = sorted((top_nums[:6] + random.sample(range(1, 46), 6))[:6])
+random.seed(int(u_id, 16))
+final_set = sorted((top_nums[:6] + random.sample(range(1, 46), 6))[:6])
+
 
 # --- [화면 출력] ---
 st.title(f"🌌 {user_name}의 통합 공명 아카이브 V4.8.2")
@@ -264,6 +310,7 @@ with st.expander("🪐 정밀 분석 및 공명 카드 발행", expanded=True):
     st.table(astro_df)
     st.info(f"**현재 공명 각도:** {aspects_txt}")
     
+
 
 
 
