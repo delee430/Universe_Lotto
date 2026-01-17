@@ -8,13 +8,18 @@ import hashlib
 import math
 from datetime import datetime, date, timedelta
 
-# [1] 시스템 설정
+# [1] 시스템 및 드라이브 경로 설정
 current_dir = os.path.dirname(os.path.abspath(__file__))
 ephe_path = os.path.join(current_dir, 'sweph')
 if not os.path.exists(ephe_path): os.makedirs(ephe_path)
 swe.set_ephe_path(ephe_path)
 
-st.set_page_config(layout="wide", page_title="우주 공명 아카이브 V4.6.3")
+# 로그 저장 폴더 (드라이브 내 universe_lotto 폴더 기준)
+log_dir = 'Universe_Lotto' 
+if not os.path.exists(log_dir): os.makedirs(log_dir)
+log_file = os.path.join(log_dir, 'resonance_log.csv')
+
+st.set_page_config(layout="wide", page_title="우주 공명 아카이브 V4.7.1")
 
 # --- [UI 헬퍼 함수] ---
 def display_lotto_box(numbers, prefix=""):
@@ -93,8 +98,8 @@ counts = collections.Counter([n for combo in all_comb for n in combo])
 top_nums = sorted([n for n, c in counts.items() if c > 1], key=lambda x: counts[x], reverse=True)
 random.seed(int(u_id, 16)); final_set = sorted((top_nums[:6] + random.sample(range(1, 46), 6))[:6])
 
-# --- [화면 출력] ---
-st.title(f"🌌 {user_name}의 통합 공명 아카이브 V4.6.3")
+# --- [상단 출력 섹션] ---
+st.title(f"🌌 {user_name}의 통합 공명 아카이브 V4.7.1")
 
 c1, c2, c3 = st.columns(3)
 with c1:
@@ -108,6 +113,8 @@ with c3:
     for i, nums in enumerate(human_list): display_lotto_box(nums, f"M{i+1}")
 
 st.divider()
+
+# --- [최종 조합 및 로그/다운로드 섹션] ---
 res_l, res_r = st.columns([3, 1])
 with res_l:
     num_boxes = "".join([f'<span style="display:inline-block; width:45px; height:45px; line-height:45px; margin:5px; background:linear-gradient(145deg, #00ffcc, #008080); color:white; border-radius:50%; text-align:center; font-weight:bold; font-size:20px; box-shadow: 0 4px 15px rgba(0,255,204,0.3);">{n}</span>' for n in final_set])
@@ -115,30 +122,31 @@ with res_l:
     st.markdown(num_boxes, unsafe_allow_html=True)
 
 with res_r:
-    log_f = 'integrated_resonance_log.csv'
-    if st.button("📊 이 데이터 통합 서버 저장"):
+    if st.button("💾 통합 서버(Drive) 저장"):
         new_row = pd.DataFrame([{'이름': user_name, '생일': birthday, 'ID': u_id, '분석일': analysis_date, '최종번호': str(final_set), '각도': aspects_txt}])
-        new_row.to_csv(log_f, mode='a', index=False, header=not os.path.exists(log_f), encoding='utf-8-sig')
+        new_row.to_csv(log_file, mode='a', index=False, header=not os.path.exists(log_file), encoding='utf-8-sig')
         st.toast("통합 서버 기록 완료!")
     
-    if os.path.exists(log_f):
-        with open(log_f, "rb") as f:
-            st.download_button("📁 마스터 로그 다운로드", f, file_name="master_log.csv", mime="text/csv")
+    if os.path.exists(log_file):
+        # 현재 사용자 기록만 추출하여 다운로드 버튼 제공
+        m_df = pd.read_csv(log_file)
+        user_only_df = m_df[m_df['ID'] == u_id]
+        if not user_only_df.empty:
+            csv_user = user_only_df.to_csv(index=False).encode('utf-8-sig')
+            st.download_button(f"📥 {user_name}님 기록만 받기", csv_user, file_name=f"my_log_{u_id}.csv", mime="text/csv")
 
-# --- [아카이브 히스토리 분석 섹션] ---
+# --- [공명 카드 이하 분석 섹션 추가] ---
 st.divider()
-st.subheader("🔍 아카이브 히스토리 분석")
-if os.path.exists(log_f):
-    m_df = pd.read_csv(log_f)
-    view_mode = st.radio("보기 설정", ["전체 로그 보기", "현재 접속자(ID) 기록만 보기"], horizontal=True)
-    if view_mode == "현재 접속자(ID) 기록만 보기":
-        st.dataframe(m_df[m_df['ID'] == u_id], use_container_width=True)
-    else:
-        st.dataframe(m_df, use_container_width=True)
-
-# --- [공명 카드] ---
 with st.expander("🪐 정밀 분석 및 공명 카드 발행", expanded=True):
     z_list = ["양자리", "황소자리", "쌍둥이자리", "게자리", "사자자리", "처녀자리", "천칭자리", "전갈자리", "사수자리", "염소자리", "물병자리", "물고기자리"]
     p_dict = {row['행성']: {'angle': (z_list.index(row['별자리']) * 30) + row['좌표']} for _, row in astro_df.iterrows()}
+    
+    # 카드 출력
     draw_astrology_card(u_id.upper(), analysis_date.strftime('%Y-%m-%d'), p_dict, human_list, final_set)
+    
+    # 행성 정밀 분석표 출력
+    st.write("### 🌌 행성 정밀 분석 데이터")
     st.table(astro_df)
+    
+    # 아스펙트(각도) 정보
+    st.info(f"**현재 공명 각도:** {aspects_txt}")
