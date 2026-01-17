@@ -1,4 +1,4 @@
-import streamlit as st
+        import streamlit as st
 import swisseph as swe
 import pandas as pd
 import collections
@@ -11,6 +11,7 @@ from streamlit_gsheets import GSheetsConnection  # 연동 라이브러리
 import gspread
 from google.oauth2.service_account import Credentials
 
+        
 # [1] 시스템 설정
 current_dir = os.path.dirname(os.path.abspath(__file__))
 ephe_path = os.path.join(current_dir, 'sweph')
@@ -25,6 +26,18 @@ conn = st.connection("gsheets", type=GSheetsConnection)
 # --- [핵심 함수] ---
 def get_user_id(name, birthday):
     return hashlib.md5(f"{name}_{birthday.strftime('%Y%m%d')}".encode()).hexdigest()[:8]
+    
+def get_ace_line_from_excel(file_path):
+    try:
+        # 설계자님 요청: Sheet1, C열(2번 인덱스)부터 I열(8번 인덱스)까지
+        df = pd.read_excel(file_path, sheet_name='로또 당첨번호', engine='openpyxl')
+        cols_of_interest = df.iloc[:, 2:9] 
+        # C열 데이터가 있는 행만 필터링 후 최신 55회차 추출
+        valid_data = cols_of_interest.dropna(subset=[df.columns[2]])
+        return valid_data.tail(55)
+    except Exception as e:
+        st.error(f"엑셀 로드 오류: {e}")
+        return pd.DataFrame()
 
 def display_lotto_box(numbers, prefix=""):
     num_html = "".join([f'<span style="display:inline-block; width:30px; height:30px; line-height:30px; margin:2px; background:#2e313d; color:#00ffcc; border-radius:5px; text-align:center; font-weight:bold; font-size:14px; border:1px solid #444;">{n}</span>' for n in numbers])
@@ -77,13 +90,7 @@ def draw_astrology_card(u_id, target_date, planet_data, res_sets, final_res):
     """, unsafe_allow_html=True)
 
   
-    def get_ace_line_from_excel(file_path):
-    try:
-        df_history = pd.read_excel(file_path)
-        # 최신 52회차(1년) 데이터를 분석용으로 반환
-        return df_history.head(52)
-    except:
-        return pd.DataFrame() # 파일이 없을 경우 빈 데이터프레임
+
 
 # --- [사이드바 설정] ---
 # [수정] 입력 섹션 및 시간 고정 로직
@@ -107,33 +114,29 @@ with st.sidebar:
     )
 
 # --- [여기가 핵심 삽입 구간!] ---
-    
-    # 1. 시각 고정: 선택한 날짜(d_input)에 20:35:00을 강제로 입힘
-    analysis_date = datetime.combine(d_input, datetime.strptime("20:35:00", "%H:%M:%S").time())
+# --- [시간 고정 및 데이터 연동] ---
+    # 1. 시각 고정: 20:35:00 강제 설정
+    analysis_time = datetime.strptime("20:35:00", "%H:%M:%S").time()
+    analysis_date = datetime.combine(d_input, analysis_time)
 
-    # 2. 지(地) 데이터 로드: 엑셀 파일 읽어오기
-    # --- [지(地) 라인을 위한 엑셀 데이터 호출] ---
-    # 파일명을 master_list.xlsm으로 수정합니다.
+    # 2. 지(地) 데이터 로드: 마스터리스트(xlsm) 최신 55회차
     excel_path = os.path.join(current_dir, 'master_list.xlsm')
+    recent_ace_data = get_ace_line_from_excel(excel_path)
     
-    # .xlsm 파일이므로 engine='openpyxl'을 명시해주는 것이 안전합니다.
-    try:
-        recent_ace_data = pd.read_excel(excel_path, engine='openpyxl').head(52)
-        if not recent_ace_data.empty:
-            st.caption("✅ 지(地): 마스터리스트 데이터 로드 완료")
-    except Exception as e:
-        st.error(f"❌ 파일 로드 실패: {e}")
+    if not recent_ace_data.empty:
+        # 시스템 전역에서 사용할 수 있게 세션에 저장
+        st.session_state.ace_historical_data = recent_ace_data
+        st.success("✅ 지(地): C~I열 최신 55회차 준비 완료")
+    else:
+        st.error("❌ 엑셀 로드 실패: 경로/시트명 확인")
     
-    # 3. 인(人) 알고리즘용 타겟 설정: 이번 주 토요일 20:35 계산
-    days_until_saturday = (5 - d_input.weekday()) % 7
-    next_saturday_date = d_input + timedelta(days=days_until_saturday)
-    target_moment = datetime.combine(next_saturday_date, datetime.strptime("20:35:00", "%H:%M:%S").time())
+    # 3. 인(人) 타겟 설정: 가장 가까운 토요일 20:35
+    days_to_sat = (5 - d_input.weekday()) % 7
+    target_moment = datetime.combine(d_input + timedelta(days=days_to_sat), analysis_time)
 
-    # 4. 사용자 확인용 메시지 (하나로 통합)
-    st.success(f"🎯 분석 시점: {analysis_date.strftime('%H:%M')} 고정")
-    st.info(f"🌌 인(人) 타겟: {target_moment.strftime('%m월 %d일 %H:%M')}")
-    
-    # ----------------------------
+    # 4. 상태 표시
+    st.info(f"🌌 분석 시점: {analysis_date.strftime('%Y-%m-%d %H:%M')}")
+    st.info(f"🎯 인(人) 타겟: {target_moment.strftime('%m/%d %H:%M')}")
 
 # --- [데이터 생성] ---
 astro_df, p_seeds, aspects_txt = get_advanced_astro(analysis_date, birthday)
@@ -261,6 +264,7 @@ with st.expander("🪐 정밀 분석 및 공명 카드 발행", expanded=True):
     st.table(astro_df)
     st.info(f"**현재 공명 각도:** {aspects_txt}")
     
+
 
 
 
