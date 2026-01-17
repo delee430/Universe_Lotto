@@ -100,6 +100,12 @@ random.seed(int(u_id, 16)); final_set = sorted((top_nums[:6] + random.sample(ran
 # --- [화면 출력] ---
 st.title(f"🌌 {user_name}의 통합 공명 아카이브 V4.8.2")
 
+# 고유 아이디 부활
+st.info(f"🆔 **고유 분석 ID:** `{u_id}` | 📅 **분석 시점:** {analysis_date.strftime('%Y-%m-%d %H:%M')}")
+
+st.divider()
+
+# 지천인 박스 출력 (기존 코드)
 c1, c2, c3 = st.columns(3)
 with c1:
     st.subheader("📊 [地] 에이스")
@@ -110,6 +116,10 @@ with c2:
 with c3:
     st.subheader("🧬 [人] 나의공명")
     for i, nums in enumerate(human_list): display_lotto_box(nums, f"M{i+1}")
+
+# [추가] 최종 통합 세트(Final Set)를 위한 별도 공간
+st.subheader("🌌 [결정체] 최종 통합 공명")
+display_lotto_box(final_set, "FINAL")
 
 st.divider()
 
@@ -198,6 +208,7 @@ with st.expander("🪐 정밀 분석 및 공명 카드 발행", expanded=True):
     st.table(astro_df)
     st.info(f"**현재 공명 각도:** {aspects_txt}")
     
+
 
 
 
