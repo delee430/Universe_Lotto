@@ -1,4 +1,4 @@
-ㄷimport streamlit as st
+import streamlit as st
 import swisseph as swe
 import pandas as pd
 import collections
@@ -329,6 +329,7 @@ with st.expander("🪐 정밀 분석 및 공명 카드 발행", expanded=True):
     st.table(astro_df)
     st.info(f"**현재 공명 각도:** {aspects_txt}")
     
+
 
 
 
