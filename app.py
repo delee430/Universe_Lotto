@@ -80,12 +80,12 @@ def draw_astrology_card(u_id, target_date, planet_data, res_sets, final_res):
 with st.sidebar:
     st.header("👤 연구원 프로필")
     user_name = st.text_input("성함", "설계자")
-    birthday = st.date_input("생년월일", value=date(1990, 1, 1))
+    birthday = st.date_input("생년월일", value=date(1990, 1, 1),
         min_value=date(1800, 1, 1),
-        max_value=date(2100, 12, 31)
-    analysis_date = st.date_input("분석 기준일", value=date.today())
+        max_value=date(2100, 12, 31))
+    analysis_date = st.date_input("분석 기준일", value=date.today(),
         min_value=date(1800, 1, 1),
-        max_value=date(2100, 12, 31)
+        max_value=date(2100, 12, 31))
     u_id = get_user_id(user_name, birthday)
 
 # --- [데이터 생성] ---
@@ -214,6 +214,7 @@ with st.expander("🪐 정밀 분석 및 공명 카드 발행", expanded=True):
     st.table(astro_df)
     st.info(f"**현재 공명 각도:** {aspects_txt}")
     
+
 
 
 
