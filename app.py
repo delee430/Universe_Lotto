@@ -8,6 +8,8 @@ import hashlib
 import math
 from datetime import datetime, date, timedelta
 from streamlit_gsheets import GSheetsConnection  # 연동 라이브러리
+import gspread
+from google.oauth2.service_account import Credentials
 
 # [1] 시스템 설정
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -120,21 +122,30 @@ with res_l:
 
 with res_r:
     # 1. 구글 시트 저장 버튼
-    if st.button("🚀 드라이브 시트에 기록"):
-        new_data = pd.DataFrame([{
-            'ID': u_id, '이름': user_name, '생일': birthday.strftime('%Y-%m-%d'),
-            '분석일': analysis_date.strftime('%Y-%m-%d'), '최종번호': str(final_set), '각도': aspects_txt
-        }])
-        try:
-            # [수정] worksheet="Sheet1"을 명시해서 정확한 위치를 알려줍니다.
-            existing_df = conn.read(worksheet="Sheet1", ttl=0) 
-            updated_df = pd.concat([existing_df, new_data], ignore_index=True)
-            conn.update(worksheet="Sheet1", data=updated_df)
-            st.toast("✅ 구글 시트 저장 완료!")
-        except:
-            # 시트가 아예 비어있을 때
-            conn.update(data=new_data)
-            st.toast("✅ 구글 시트 첫 기록 완료!")
+    # [수정] 저장 버튼 섹션 내부
+if st.button("🚀 드라이브 시트에 기록"):
+    try:
+        # 1. Secrets에서 열쇠 정보 직접 가져오기
+        scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+        s_dict = st.secrets["connections"]["gsheets"]
+        
+        # 2. 인증 객체 직접 생성 (직통 연결)
+        creds = Credentials.from_service_account_info(s_dict, scopes=scope)
+        client = gspread.authorize(creds)
+        
+        # 3. 시트 열기 (URL로 직접 열기)
+        sh = client.open_by_url(s_dict["spreadsheet"])
+        worksheet = sh.get_worksheet(0) # 첫 번째 탭 선택
+        
+        # 4. 데이터 추가 (새 행으로 넣기)
+        new_row = [u_id, user_name, birthday.strftime('%Y-%m-%d'), 
+                   analysis_date.strftime('%Y-%m-%d'), str(final_set), aspects_txt]
+        worksheet.append_row(new_row)
+        
+        st.toast("✅ [직통] 구글 시트 저장 성공!")
+    except Exception as e:
+        st.error(f"⚠️ 연결 실패: {str(e)}")
+        st.info("시트 공유 설정에 이메일이 정확히 추가되었는지 다시 확인해주세요.")
 
     # 2. 개인별 기록 다운로드
     try:
@@ -173,4 +184,5 @@ with st.expander("🪐 정밀 분석 및 공명 카드 발행", expanded=True):
     st.table(astro_df)
     st.info(f"**현재 공명 각도:** {aspects_txt}")
     
+
 
