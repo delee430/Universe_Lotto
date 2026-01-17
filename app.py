@@ -100,77 +100,79 @@ random.seed(int(u_id, 16)); final_set = sorted((top_nums[:6] + random.sample(ran
 # --- [화면 출력] ---
 st.title(f"🌌 {user_name}의 통합 공명 아카이브 V4.8.2")
 
-# 고유 아이디 부활
+# 1. 고유 아이디 및 정보 (최상단)
 st.info(f"🆔 **고유 분석 ID:** `{u_id}` | 📅 **분석 시점:** {analysis_date.strftime('%Y-%m-%d %H:%M')}")
 
+# 2. 최종 통합 공명 (주인공 - 중앙 배치)
+st.divider()
+st.subheader("🌌 [결정체] 최종 통합 공명")
+st.caption("지(地)·천(天)·인(人)의 공통 분모를 추출하여 정제한 핵심 세트입니다.")
+display_lotto_box(final_set, "FINAL") 
 st.divider()
 
-# 지천인 박스 출력 (기존 코드)
+# 3. 지천인 세부 리스트 (근거 데이터 - 3단 컬럼)
+st.markdown("### 📊 세부 공명 데이터 (地·天·人)")
 c1, c2, c3 = st.columns(3)
 with c1:
-    st.subheader("📊 [地] 에이스")
+    st.markdown("**[地] 에이스**")
     for i, nums in enumerate(ace_list): display_lotto_box(nums, f"E{i+1}")
 with c2:
-    st.subheader("🪐 [天] 우주기운")
+    st.markdown("**[天] 우주기운**")
     for i, nums in enumerate(sky_list): display_lotto_box(nums, f"S{i+1}")
 with c3:
-    st.subheader("🧬 [人] 나의공명")
+    st.markdown("**[人] 나의공명**")
     for i, nums in enumerate(human_list): display_lotto_box(nums, f"M{i+1}")
 
-# [추가] 최종 통합 세트(Final Set)를 위한 별도 공간
-st.subheader("🌌 [결정체] 최종 통합 공명")
-display_lotto_box(final_set, "FINAL")
+
 
 st.divider()
 
-# --- [저장 및 개인별 다운로드 섹션] ---
+# --- [하단: 최종 결과 및 저장 섹션] ---
+st.divider()
+
 res_l, res_r = st.columns([3, 1])
+
+# 왼쪽: 최종 통합 세트 시각화
 with res_l:
     num_boxes = "".join([f'<span style="display:inline-block; width:45px; height:45px; line-height:45px; margin:5px; background:linear-gradient(145deg, #00ffcc, #008080); color:white; border-radius:50%; text-align:center; font-weight:bold; font-size:20px; box-shadow: 0 4px 15px rgba(0,255,204,0.3);">{n}</span>' for n in final_set])
-    st.markdown(f"### 🍀 최종 공명 조합 ({analysis_date})")
+    st.markdown(f"### 🍀 최종 통합 공명 결정체 ({analysis_date.strftime('%Y-%m-%d')})")
     st.markdown(num_boxes, unsafe_allow_html=True)
-    with res_r:
-        if st.button("🚀 드라이브 시트에 기록"):
-            try:
-                # 1. 인증 및 연결
-                import gspread
-                from google.oauth2.service_account import Credentials
-                
-                scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-                s_dict = st.secrets["connections"]["gsheets"]
-                
-                creds = Credentials.from_service_account_info(s_dict, scopes=scope)
-                client = gspread.authorize(creds)
-                sh = client.open_by_url(s_dict["spreadsheet"])
-                worksheet = sh.get_worksheet(0)
+    st.caption("지·천·인의 모든 기운이 응축된 최종 16번째 세트입니다.")
 
-                # [수정] 2. 데이터 통합 (15개 지천인 + 1개 최종 통합)
-                all_rows = []
-        
-                # (1) 지천인 15세트 먼저 추가
-                categories = [("地(Ace)", ace_list), ("天(Sky)", sky_list), ("人(Human)", human_list)]
-                for cat_name, lotto_list in categories:
-                    for idx, nums in enumerate(lotto_list):
-                        all_rows.append([
-                            u_id, user_name, birthday.strftime('%Y-%m-%d'), 
-                            analysis_date.strftime('%Y-%m-%d'), 
-                            f"{cat_name}-{idx+1}", str(nums), aspects_txt, "", ""
-                        ])
+# 오른쪽: 저장 버튼 로직
+with res_r:
+    st.write("") # 간격 조정
+    if st.button("🚀 전체 16개 세트 기록"):
+        try:
+            import gspread
+            from google.oauth2.service_account import Credentials
+            
+            # 1. 시트 연결
+            scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+            s_dict = st.secrets["connections"]["gsheets"]
+            creds = Credentials.from_service_account_info(s_dict, scopes=scope)
+            client = gspread.authorize(creds)
+            sh = client.open_by_url(s_dict["spreadsheet"])
+            worksheet = sh.get_worksheet(0)
 
-                # (2) [추가] 가장 중요한 final_set (최종 통합 1세트) 추가
-                all_rows.append([
-                    u_id, user_name, birthday.strftime('%Y-%m-%d'), 
-                    analysis_date.strftime('%Y-%m-%d'), 
-                    "🌌최종통합(Final)", str(final_set), aspects_txt, "", ""
-                ])
+            # 2. 데이터 통합 (중복 없이 16개 구성)
+            all_rows = []
+            
+            # 지천인 15개
+            cats = [("地(Ace)", ace_list), ("天(Sky)", sky_list), ("人(Human)", human_list)]
+            for cat_name, l_list in cats:
+                for idx, nums in enumerate(l_list):
+                    all_rows.append([u_id, user_name, birthday.strftime('%Y-%m-%d'), analysis_date.strftime('%Y-%m-%d'), f"{cat_name}-{idx+1}", str(nums), aspects_txt, "", ""])
 
-                # 3. 16개 데이터 일괄 전송
-                worksheet.append_rows(all_rows)
-                st.toast(f"✅ 지천인 15세트 + 최종 통합 1세트(총 16개) 기록 완료!")
-                
-            except Exception as e:
-                st.error(f"⚠️ 연결 실패: {str(e)}")
+            # 마지막 16번째 최종 통합 세트 추가
+            all_rows.append([u_id, user_name, birthday.strftime('%Y-%m-%d'), analysis_date.strftime('%Y-%m-%d'), "🌌최종통합(Final)", str(final_set), aspects_txt, "", ""])
 
+            # 3. 전송
+            worksheet.append_rows(all_rows)
+            st.toast("✅ 16개 세트 전체 아카이브 완료!")
+            
+        except Exception as e:
+            st.error(f"⚠️ 저장 실패: {e}")
     # 2. 개인별 기록 다운로드
     try:
         all_data = conn.read(ttl=0)
@@ -208,6 +210,7 @@ with st.expander("🪐 정밀 분석 및 공명 카드 발행", expanded=True):
     st.table(astro_df)
     st.info(f"**현재 공명 각도:** {aspects_txt}")
     
+
 
 
 
