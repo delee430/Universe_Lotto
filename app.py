@@ -126,11 +126,10 @@ with res_r:
             '분석일': analysis_date.strftime('%Y-%m-%d'), '최종번호': str(final_set), '각도': aspects_txt
         }])
         try:
-            # 기존 데이터 읽기
-            existing_df = conn.read(ttl=0) # 캐시 없이 실시간 읽기
+            # [수정] worksheet="Sheet1"을 명시해서 정확한 위치를 알려줍니다.
+            existing_df = conn.read(worksheet="Sheet1", ttl=0) 
             updated_df = pd.concat([existing_df, new_data], ignore_index=True)
-            # 시트에 덮어쓰기 (실시간 동기화)
-            conn.update(data=updated_df)
+            conn.update(worksheet="Sheet1", data=updated_df)
             st.toast("✅ 구글 시트 저장 완료!")
         except:
             # 시트가 아예 비어있을 때
@@ -174,3 +173,4 @@ with st.expander("🪐 정밀 분석 및 공명 카드 발행", expanded=True):
     st.table(astro_df)
     st.info(f"**현재 공명 각도:** {aspects_txt}")
     
+
