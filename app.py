@@ -112,11 +112,17 @@ with st.sidebar:
     analysis_date = datetime.combine(d_input, datetime.strptime("20:35:00", "%H:%M:%S").time())
 
     # 2. 지(地) 데이터 로드: 엑셀 파일 읽어오기
-    excel_path = os.path.join(current_dir, 'lotto_history.xlsx')
-    recent_ace_data = get_ace_line_from_excel(excel_path)
+    # --- [지(地) 라인을 위한 엑셀 데이터 호출] ---
+    # 파일명을 master_list.xlsm으로 수정합니다.
+    excel_path = os.path.join(current_dir, 'master_list.xlsm')
     
-    if not recent_ace_data.empty:
-        st.caption("✅ 지(地): 최신 52회차 데이터 로드 완료")
+    # .xlsm 파일이므로 engine='openpyxl'을 명시해주는 것이 안전합니다.
+    try:
+        recent_ace_data = pd.read_excel(excel_path, engine='openpyxl').head(52)
+        if not recent_ace_data.empty:
+            st.caption("✅ 지(地): 마스터리스트 데이터 로드 완료")
+    except Exception as e:
+        st.error(f"❌ 파일 로드 실패: {e}")
     
     # 3. 인(人) 알고리즘용 타겟 설정: 이번 주 토요일 20:35 계산
     days_until_saturday = (5 - d_input.weekday()) % 7
@@ -255,6 +261,7 @@ with st.expander("🪐 정밀 분석 및 공명 카드 발행", expanded=True):
     st.table(astro_df)
     st.info(f"**현재 공명 각도:** {aspects_txt}")
     
+
 
 
 
