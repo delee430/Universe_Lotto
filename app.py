@@ -134,28 +134,29 @@ with res_l:
                 sh = client.open_by_url(s_dict["spreadsheet"])
                 worksheet = sh.get_worksheet(0)
 
-                # 2. 데이터 통합 (ace_list, sky_list, human_list)
+                # [수정] 2. 데이터 통합 (15개 지천인 + 1개 최종 통합)
                 all_rows = []
+        
+                # (1) 지천인 15세트 먼저 추가
                 categories = [("地(Ace)", ace_list), ("天(Sky)", sky_list), ("人(Human)", human_list)]
-                
                 for cat_name, lotto_list in categories:
                     for idx, nums in enumerate(lotto_list):
-                        row = [
-                            u_id, 
-                            user_name, 
-                            birthday.strftime('%Y-%m-%d'), 
+                        all_rows.append([
+                            u_id, user_name, birthday.strftime('%Y-%m-%d'), 
                             analysis_date.strftime('%Y-%m-%d'), 
-                            f"{cat_name}-{idx+1}", 
-                            str(nums), 
-                            aspects_txt,
-                            "", # 구매여부
-                            ""  # 당첨결과
-                        ]
-                        all_rows.append(row)
+                            f"{cat_name}-{idx+1}", str(nums), aspects_txt, "", ""
+                        ])
 
-                # 3. 데이터 전송
+                # (2) [추가] 가장 중요한 final_set (최종 통합 1세트) 추가
+                all_rows.append([
+                    u_id, user_name, birthday.strftime('%Y-%m-%d'), 
+                    analysis_date.strftime('%Y-%m-%d'), 
+                    "🌌최종통합(Final)", str(final_set), aspects_txt, "", ""
+                ])
+
+                # 3. 16개 데이터 일괄 전송
                 worksheet.append_rows(all_rows)
-                st.toast(f"✅ {len(all_rows)}개의 세트가 기록되었습니다!")
+                st.toast(f"✅ 지천인 15세트 + 최종 통합 1세트(총 16개) 기록 완료!")
                 
             except Exception as e:
                 st.error(f"⚠️ 연결 실패: {str(e)}")
@@ -197,6 +198,7 @@ with st.expander("🪐 정밀 분석 및 공명 카드 발행", expanded=True):
     st.table(astro_df)
     st.info(f"**현재 공명 각도:** {aspects_txt}")
     
+
 
 
 
