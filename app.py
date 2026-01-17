@@ -1,4 +1,4 @@
-import streamlit as st
+ㄷimport streamlit as st
 import swisseph as swe
 import pandas as pd
 import collections
@@ -22,6 +22,25 @@ st.set_page_config(layout="wide", page_title="우주 공명 아카이브 V4.8.2"
 
 # [2] 구글 시트 연결 생성
 conn = st.connection("gsheets", type=GSheetsConnection)
+
+# --- [시스템 사용 매뉴얼 섹션] ---
+with st.expander("📖 트랜센던트 레조넌스 시스템 매뉴얼 (v4.8.2)", expanded=False):
+    st.markdown("""
+    ### 🌌 시스템 핵심 원리
+    본 시스템은 **지·천·인(地·天·人) 삼재**의 에너지를 20:35의 임계점에서 공명시킵니다.
+    
+    1. **地 (Earth - Ace Line):** `master_list.xlsm`의 최근 55회차 데이터를 분석하여 통계적 가중치를 부여합니다. (과거의 축적)
+    2. **天 (Sky - Celestial):** 분석 당일 **20:35**의 행성 배치와 각도를 계산하여 우주의 기운을 수치화합니다. (현재의 흐름)
+    3. **人 (Human - Destiny):** 사용자의 고유 에너지와 미래 당첨 시점(**토요일 20:35**) 사이의 공명각을 추출합니다. (미래의 확정)
+
+    ### 🛠️ 운영 가이드
+    * **데이터 업데이트:** 매주 추첨 결과 발표 후 엑셀 파일을 깃허브에 재업로드하세요.
+    * **분석 시점:** 가급적 마음이 평온한 상태에서 **20:35** 근처에 분석을 실행하는 것을 권장합니다.
+    * **기록 보존:** 하단의 '🚀 전체 16개 세트 기록' 버튼을 눌러 공명 데이터를 아카이브하세요.
+    
+    ---
+    *“단순한 번호 추출을 넘어, 당신의 운명 궤적을 계산합니다.”*
+    """)
 
 # --- [핵심 함수] ---
 def get_user_id(name, birthday):
@@ -310,6 +329,7 @@ with st.expander("🪐 정밀 분석 및 공명 카드 발행", expanded=True):
     st.table(astro_df)
     st.info(f"**현재 공명 각도:** {aspects_txt}")
     
+
 
 
 
