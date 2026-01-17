@@ -119,55 +119,46 @@ with res_l:
     num_boxes = "".join([f'<span style="display:inline-block; width:45px; height:45px; line-height:45px; margin:5px; background:linear-gradient(145deg, #00ffcc, #008080); color:white; border-radius:50%; text-align:center; font-weight:bold; font-size:20px; box-shadow: 0 4px 15px rgba(0,255,204,0.3);">{n}</span>' for n in final_set])
     st.markdown(f"### 🍀 최종 공명 조합 ({analysis_date})")
     st.markdown(num_boxes, unsafe_allow_html=True)
-    
-with res_r:
-    # 구글 로그 저장 버튼
-    if st.button("🚀 드라이브 시트에 기록"):
-        try:
-            # 1. 인증 및 연결
-            scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-            s_dict = st.secrets["connections"]["gsheets"]
-            from google.oauth2.service_account import Credentials
-            import gspread
-            
-            creds = Credentials.from_service_account_info(s_dict, scopes=scope)
-            client = gspread.authorize(creds)
-            sh = client.open_by_url(s_dict["spreadsheet"])
-            worksheet = sh.get_worksheet(0)
+    with res_r:
+        if st.button("🚀 드라이브 시트에 기록"):
+            try:
+                # 1. 인증 및 연결
+                import gspread
+                from google.oauth2.service_account import Credentials
+                
+                scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+                s_dict = st.secrets["connections"]["gsheets"]
+                
+                creds = Credentials.from_service_account_info(s_dict, scopes=scope)
+                client = gspread.authorize(creds)
+                sh = client.open_by_url(s_dict["spreadsheet"])
+                worksheet = sh.get_worksheet(0)
 
-            # 2. 데이터 통합 (ace_list, sky_list, human_list)
-            all_rows = []
-            categories = [("地(Ace)", ace_list), ("天(Sky)", sky_list), ("人(Human)", human_list)]
-            
-            for cat_name, lotto_list in categories:
-                for idx, nums in enumerate(lotto_list):
-                    row = [
-                        u_id, 
-                        user_name, 
-                        birthday.strftime('%Y-%m-%d'), 
-                        analysis_date.strftime('%Y-%m-%d'), 
-                        f"{cat_name}-{idx+1}", 
-                        str(nums), 
-                        aspects_txt,
-                        "", # 구매여부
-                        ""  # 당첨결과
-                    ]
-                    all_rows.append(row)
+                # 2. 데이터 통합 (ace_list, sky_list, human_list)
+                all_rows = []
+                categories = [("地(Ace)", ace_list), ("天(Sky)", sky_list), ("人(Human)", human_list)]
+                
+                for cat_name, lotto_list in categories:
+                    for idx, nums in enumerate(lotto_list):
+                        row = [
+                            u_id, 
+                            user_name, 
+                            birthday.strftime('%Y-%m-%d'), 
+                            analysis_date.strftime('%Y-%m-%d'), 
+                            f"{cat_name}-{idx+1}", 
+                            str(nums), 
+                            aspects_txt,
+                            "", # 구매여부
+                            ""  # 당첨결과
+                        ]
+                        all_rows.append(row)
 
-            # 3. 16개 세트 일괄 전송
-            worksheet.append_rows(all_rows)
-            st.toast(f"✅ {len(all_rows)}개의 천지인 통합 세트 기록 완료!")
-            
-        except Exception as e:
-            st.error(f"⚠️ 연결 실패: {str(e)}")
-            
-        
-    except Exception as e:
-        st.error(f"⚠️ 연결 실패: {str(e)}")
-
-        except Exception as e:
-            st.error(f"⚠️ 연결 실패: {str(e)}")
-            st.info("시트 공유 설정에 이메일이 정확히 추가되었는지 다시 확인해주세요.")
+                # 3. 데이터 전송
+                worksheet.append_rows(all_rows)
+                st.toast(f"✅ {len(all_rows)}개의 세트가 기록되었습니다!")
+                
+            except Exception as e:
+                st.error(f"⚠️ 연결 실패: {str(e)}")
 
     # 2. 개인별 기록 다운로드
     try:
@@ -206,6 +197,7 @@ with st.expander("🪐 정밀 분석 및 공명 카드 발행", expanded=True):
     st.table(astro_df)
     st.info(f"**현재 공명 각도:** {aspects_txt}")
     
+
 
 
 
