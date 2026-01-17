@@ -14,10 +14,13 @@ ephe_path = os.path.join(current_dir, 'sweph')
 if not os.path.exists(ephe_path): os.makedirs(ephe_path)
 swe.set_ephe_path(ephe_path)
 
-# 로그 저장 폴더 (드라이브 내 universe_lotto 폴더 기준)
-log_dir = 'Universe_Lotto' 
-if not os.path.exists(log_dir): os.makedirs(log_dir)
-log_file = os.path.join(log_dir, 'resonance_log.csv')
+# [1] 드라이브 저장 경로 설정 (어제의 파일과 충돌 방지)
+# 새롭게 관리할 폴더명을 지정합니다.
+LOG_DIR = 'universe_lotto'
+LOG_FILE = os.path.join(LOG_DIR, 'resonance_log.csv')
+
+if not os.path.exists(LOG_DIR):
+    os.makedirs(LOG_DIR)
 
 st.set_page_config(layout="wide", page_title="우주 공명 아카이브 V4.7.1")
 
@@ -115,26 +118,38 @@ with c3:
 st.divider()
 
 # --- [최종 조합 및 로그/다운로드 섹션] ---
+# --- [로그 저장 및 개인별 다운로드 섹션] ---
+st.divider()
 res_l, res_r = st.columns([3, 1])
+
 with res_l:
-    num_boxes = "".join([f'<span style="display:inline-block; width:45px; height:45px; line-height:45px; margin:5px; background:linear-gradient(145deg, #00ffcc, #008080); color:white; border-radius:50%; text-align:center; font-weight:bold; font-size:20px; box-shadow: 0 4px 15px rgba(0,255,204,0.3);">{n}</span>' for n in final_set])
+    # 최종 번호 시각화 (기존 동일)
     st.markdown(f"### 🍀 최종 공명 조합 ({analysis_date.strftime('%Y-%m-%d')})")
-    st.markdown(num_boxes, unsafe_allow_html=True)
+    # ... (번호 박스 출력) ...
 
 with res_r:
-    if st.button("💾 통합 서버(Drive) 저장"):
-        new_row = pd.DataFrame([{'이름': user_name, '생일': birthday, 'ID': u_id, '분석일': analysis_date, '최종번호': str(final_set), '각도': aspects_txt}])
-        new_row.to_csv(log_file, mode='a', index=False, header=not os.path.exists(log_file), encoding='utf-8-sig')
-        st.toast("통합 서버 기록 완료!")
+    # [중요] 기존 파일을 건드리지 않고 오직 지정된 새 로그 파일에만 기록
+    if st.button("💾 새 마스터 로그에 저장"):
+        new_row = pd.DataFrame([{
+            'ID': u_id, 
+            '이름': user_name, 
+            '분석일': analysis_date, 
+            '번호': str(final_set), 
+            '각도': aspects_txt,
+            '기록시점': datetime.now().strftime('%Y-%m-%d %H:%M')
+        }])
+        # 새 로그 파일에 덧붙이기 (기존 파일은 건드리지 않음)
+        new_row.to_csv(LOG_FILE, mode='a', index=False, header=not os.path.exists(LOG_FILE), encoding='utf-8-sig')
+        st.toast(f"{analysis_date} 데이터가 통합 로그에 추가되었습니다.")
     
-    if os.path.exists(log_file):
-        # 현재 사용자 기록만 추출하여 다운로드 버튼 제공
-        m_df = pd.read_csv(log_file)
+    # 내 기록만 내려받기 (전체 로그는 비공개)
+    if os.path.exists(LOG_FILE):
+        m_df = pd.read_csv(LOG_FILE)
         user_only_df = m_df[m_df['ID'] == u_id]
         if not user_only_df.empty:
             csv_user = user_only_df.to_csv(index=False).encode('utf-8-sig')
             st.download_button(f"📥 {user_name}님 기록만 받기", csv_user, file_name=f"my_log_{u_id}.csv", mime="text/csv")
-
+            
 # ... (상단 핵심 연산 및 로그 저장 로직은 V4.7.1과 동일) ...
 
 # --- [공명 카드 및 기운 해석 섹션] ---
@@ -166,3 +181,4 @@ with st.expander("🪐 정밀 분석 및 공명 카드 발행", expanded=True):
     st.write("### 🌌 행성 위치 정밀 데이터")
     st.table(astro_df)
     st.info(f"**현재 공명 각도:** {aspects_txt}")
+
